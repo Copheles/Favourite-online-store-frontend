@@ -92,6 +92,51 @@ export type PointsSettingsFormValues = z.infer<
   ReturnType<typeof getPointsSettingsSchema>
 >;
 
+export const RECEIPT_PAPER_WIDTH_PRESETS = [58, 65, 80] as const;
+export type ReceiptPaperWidthPreset =
+  (typeof RECEIPT_PAPER_WIDTH_PRESETS)[number];
+
+/** @deprecated use RECEIPT_PAPER_WIDTH_PRESETS */
+export const RECEIPT_PAPER_WIDTH_OPTIONS = RECEIPT_PAPER_WIDTH_PRESETS;
+export type ReceiptPaperWidthOption = ReceiptPaperWidthPreset;
+
+export const RECEIPT_PAPER_MODES = [
+  "shopDefault",
+  "58",
+  "65",
+  "80",
+  "a4",
+  "custom",
+] as const;
+export type ReceiptPaperMode = (typeof RECEIPT_PAPER_MODES)[number];
+
+export const getReceiptPaperSchema = (t: (key: string) => string) =>
+  z.object({
+    mode: z.enum(RECEIPT_PAPER_MODES),
+    customWidthMm: z
+      .number({ message: t("pos.validation.numberRequired") })
+      .min(30, t("pos.validation.paperWidthRange"))
+      .max(120, t("pos.validation.paperWidthRange")),
+  });
+
+export type ReceiptPaperFormValues = z.infer<
+  ReturnType<typeof getReceiptPaperSchema>
+>;
+
+export const getShopSettingsSchema = (t: (key: string) => string) =>
+  z.object({
+    shopName: z
+      .string()
+      .min(1, t("pos.validation.nameRequired"))
+      .max(128, t("pos.validation.max128")),
+    shopAddress: z.string().max(255, t("pos.validation.max128")).optional().or(z.literal("")),
+    shopPhone: z.string().max(128, t("pos.validation.max128")).optional().or(z.literal("")),
+  });
+
+export type ShopSettingsFormValues = z.infer<
+  ReturnType<typeof getShopSettingsSchema>
+>;
+
 export const productFormDefaults: ProductFormValues = {
   name: "",
   code: "",

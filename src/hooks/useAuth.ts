@@ -1,16 +1,32 @@
-import { useSelector } from "react-redux";
-import type { RootState } from "@/redux/store";
+import { useMemo } from "react";
+import { useAppSelector } from "@/redux/hooks";
+import {
+  isBusinessAdminRole,
+  isMonitorRole,
+  isSuperAdminRole,
+  hasStoreOperatorAccessRole,
+  canPerformWrites,
+} from "@/types/auth";
 
 export function useAuth() {
-  const { user, isAuthenticated, loggingOut } = useSelector(
-    (state: RootState) => state.auth,
-  );
+  const user = useAppSelector((state) => state.auth.user);
+  const isAuthenticated = useAppSelector((state) => state.auth.isAuthenticated);
+  const loggingOut = useAppSelector((state) => state.auth.loggingOut);
 
-  return {
-    user,
-    isAuthenticated,
-    loggingOut,
-    isAdmin: user?.role?.toLowerCase() === "admin",
-    isStaff: user?.role?.toLowerCase() === "staff",
-  };
+  return useMemo(() => {
+    const role = user?.role?.toLowerCase();
+    return {
+      user,
+      isAuthenticated,
+      loggingOut,
+      isSuperAdmin: isSuperAdminRole(user?.role),
+      isOwner: role === "owner",
+      isAdmin: role === "admin",
+      isBusinessAdmin: isBusinessAdminRole(user?.role),
+      hasStoreOperatorAccess: hasStoreOperatorAccessRole(user?.role),
+      isStaff: role === "staff",
+      isMonitor: isMonitorRole(user?.role),
+      canWrite: canPerformWrites(user?.role),
+    };
+  }, [user, isAuthenticated, loggingOut]);
 }

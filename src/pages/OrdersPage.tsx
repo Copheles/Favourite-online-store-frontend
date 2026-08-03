@@ -7,6 +7,7 @@ import { Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
 import {
   EmptyState,
   ErrorState,
@@ -34,8 +35,11 @@ import { PosToaster, usePosToast } from "@/components/shared/pos/PosToast";
 import { PosToolbar, PosToolbarActions, PosToolbarGroup } from "@/components/shared/pos/PosToolbar";
 import { TableSkeleton } from "@/components/shared/pos/TableSkeleton";
 import { OrderStatusBadge } from "@/components/shared/pos/OrderStatusBadge";
+import { ReceiptTicket } from "@/components/receipt/ReceiptTicket";
 import { useUrlEnumParam, useUrlLimit, useUrlPage } from "@/hooks/useUrlQuery";
+import { useAuth } from "@/hooks/useAuth";
 import {
+  useAddOrderPayment,
   useOrder,
   useOrderReceipt,
   useOrders,
@@ -50,7 +54,7 @@ import {
   type OrderStatusFilter,
   type PaymentFilter,
 } from "@/lib/listFilters";
-import type { OrderStatus } from "@/types/api";
+import type { OrderStatus, PaymentType } from "@/types/api";
 import {
   getOrderCashierName,
   getOrderDate,
@@ -62,15 +66,24 @@ import {
   resetUrlPage,
   writeUrlString,
 } from "@/lib/urlQuery";
-import type { OrderDetail, OrderListItem, OrderReceipt } from "@/types/api";
+import type { OrderDetail, OrderListItem } from "@/types/api";
 import { cn } from "@/lib/utils";
 import {
   getDateRangeFilterSchema,
   type DateRangeFilterValues,
 } from "@/validation/filter.validation";
 
+const PAYMENT_OPTIONS: PaymentType[] = [
+  "CASH",
+  "KBZPAY",
+  "WAVEPAY",
+  "CARD",
+  "BANKING",
+];
+
 export function OrdersPage() {
   const { t } = useTranslation();
+  const { canWrite } = useAuth();
   const location = useLocation();
   const isHistory = location.pathname.includes("/completed");
   const isPending = location.pathname.includes("/pending");
@@ -81,6 +94,7 @@ export function OrdersPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { toasts, showToast, dismiss } = usePosToast();
   const updateStatus = useUpdateOrderStatus();
+  const addPaymentMutation = useAddOrderPayment();
   const [page, setPage] = useUrlPage();
   const [limit, setLimit] = useUrlLimit(
     PAGE_SIZE.default,
@@ -103,9 +117,11 @@ export function OrdersPage() {
       : orderStatusFilterToApi(statusFilter);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [showReceipt, setShowReceipt] = useState(false);
+  const [paymentTarget, setPaymentTarget] = useState<OrderDetail | null>(null);
   const prevModeRef = useRef(mode);
 
   const appliedSearch = readUrlString(searchParams, "q");
+  const customerId = readUrlString(searchParams, "customerId");
   const fromDate = isCurrent ? "" : readUrlString(searchParams, "from", defaultFrom);
   const toDate = isCurrent ? "" : readUrlString(searchParams, "to", defaultTo);
 
@@ -139,6 +155,7 @@ export function OrdersPage() {
 
   const ordersQuery = useOrders({
     search: appliedSearch || undefined,
+    customerId: customerId || undefined,
     fromDate: isCurrent ? undefined : fromDate || undefined,
     toDate: isCurrent ? undefined : toDate || undefined,
     futureOnly: isCurrent ? true : undefined,
@@ -184,7 +201,7 @@ export function OrdersPage() {
   function renderRowActions(row: OrderListItem) {
     return (
       <>
-        {row.status === "PROCESSING" && (
+        {canWrite && row.status === "PROCESSING" && (
           <>
             <Button
               size="sm"
@@ -246,6 +263,7 @@ export function OrdersPage() {
       next.delete("q");
       next.delete("payment");
       next.delete("status");
+      next.delete("customerId");
       writeUrlString(next, "from", defaultFrom, defaultFrom);
       writeUrlString(next, "to", defaultTo, defaultTo);
       resetUrlPage(next);
@@ -362,7 +380,7 @@ export function OrdersPage() {
       </div>
 
       {ordersQuery.isLoading && !ordersQuery.data && (
-        <TableSkeleton rows={8} cols={8} />
+        <TableSkeleton rows={8} cols={9} />
       )}
       {ordersQuery.isError && <ErrorState />}
       {!ordersQuery.isLoading && rows.length === 0 && (
@@ -375,7 +393,7 @@ export function OrdersPage() {
             {rows.map((row: OrderListItem) => (
               <PosRecordCard
                 key={row.id}
-                title={`#${row.dailySerial} · ${row.invoiceNumber}`}
+                title={`${row.orderNumber} · ${row.invoiceNumber}`}
                 subtitle={row.customerName}
                 trailing={
                   <>
@@ -387,10 +405,22 @@ export function OrdersPage() {
                 }
                 fields={[
                   {
+                    label: t("pos.orders.orderId"),
+                    value: row.orderNumber,
+                  },
+                  {
                     label: t("pos.orders.dailySerial"),
                     value: `#${row.dailySerial}`,
                   },
                   { label: t("pos.orders.payment"), value: row.paymentType ?? "-" },
+                  {
+                    label: t("pos.outstanding.paid"),
+                    value: formatMoney(row.paidTotal ?? 0),
+                  },
+                  {
+                    label: t("pos.orders.balanceDue"),
+                    value: formatMoney(row.balanceDue ?? 0),
+                  },
                   {
                     label: t("pos.orders.date"),
                     value: formatDate(row.orderDate ?? row.createdAt),
@@ -409,10 +439,13 @@ export function OrdersPage() {
             <PosTable>
               <PosTableHead>
                 <tr>
+                  <PosTableHeaderCell>{t("pos.orders.orderId")}</PosTableHeaderCell>
                   <PosTableHeaderCell>{t("pos.orders.dailySerial")}</PosTableHeaderCell>
                   <PosTableHeaderCell>{t("pos.orders.invoice")}</PosTableHeaderCell>
                   <PosTableHeaderCell>{t("pos.orders.customer")}</PosTableHeaderCell>
                   <PosTableHeaderCell>{t("pos.orders.total")}</PosTableHeaderCell>
+                  <PosTableHeaderCell>{t("pos.outstanding.paid")}</PosTableHeaderCell>
+                  <PosTableHeaderCell>{t("pos.orders.balanceDue")}</PosTableHeaderCell>
                   <PosTableHeaderCell>{t("pos.orders.payment")}</PosTableHeaderCell>
                   <PosTableHeaderCell>{t("pos.orders.status")}</PosTableHeaderCell>
                   <PosTableHeaderCell>{t("pos.sale.orderNotes")}</PosTableHeaderCell>
@@ -423,6 +456,9 @@ export function OrdersPage() {
               <PosTableBody>
                 {rows.map((row: OrderListItem) => (
                   <PosTableRow key={row.id}>
+                    <PosTableCell className="font-medium tabular-nums">
+                      {row.orderNumber}
+                    </PosTableCell>
                     <PosTableCell className="font-semibold tabular-nums">
                       #{row.dailySerial}
                     </PosTableCell>
@@ -431,6 +467,16 @@ export function OrdersPage() {
                     </PosTableCell>
                     <PosTableCell>{row.customerName}</PosTableCell>
                     <PosTableCell>{formatMoney(row.netTotal)}</PosTableCell>
+                    <PosTableCell>{formatMoney(row.paidTotal ?? 0)}</PosTableCell>
+                    <PosTableCell
+                      className={
+                        toMoney(row.balanceDue) > 0
+                          ? "font-semibold text-destructive"
+                          : undefined
+                      }
+                    >
+                      {formatMoney(row.balanceDue ?? 0)}
+                    </PosTableCell>
                     <PosTableCell>{row.paymentType ?? "-"}</PosTableCell>
                     <PosTableCell>
                       <OrderStatusBadge status={row.status} />
@@ -473,31 +519,41 @@ export function OrdersPage() {
 
       {selectedId && !showReceipt && detailQuery.data && (
         <PosModal
-          title={
-            detailQuery.data.dailySerial
-              ? `#${detailQuery.data.dailySerial} · ${detailQuery.data.invoiceNumber}`
-              : detailQuery.data.invoiceNumber
-          }
+          title={`${detailQuery.data.orderNumber} · ${detailQuery.data.invoiceNumber}`}
           description={formatDate(getOrderDate(detailQuery.data))}
           onClose={() => setSelectedId(null)}
           closeLabel={t("pos.common.close")}
           wide
         >
           <OrderDetailView order={detailQuery.data} />
+          {canWrite &&
+            detailQuery.data.status !== "CANCELLED" &&
+            toMoney(detailQuery.data.balanceDue) > 0 && (
+              <div className="mt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => setPaymentTarget(detailQuery.data)}
+                >
+                  {t("pos.outstanding.addPayment")}
+                </Button>
+              </div>
+            )}
         </PosModal>
       )}
 
       {selectedId && showReceipt && receiptQuery.data && (
         <PosModal
           title={t("pos.orders.receipt")}
-          description={receiptQuery.data.invoiceNumber}
+          description={`${receiptQuery.data.orderNumber ?? receiptQuery.data.orderId} · ${receiptQuery.data.invoiceNumber}`}
           onClose={() => {
             setSelectedId(null);
             setShowReceipt(false);
           }}
           closeLabel={t("pos.common.close")}
         >
-          <ReceiptView receipt={receiptQuery.data} />
+          <ReceiptTicket receipt={receiptQuery.data} />
           <Button
             className="mt-4 w-full"
             variant="outline"
@@ -507,6 +563,26 @@ export function OrdersPage() {
             {t("pos.orders.print")}
           </Button>
         </PosModal>
+      )}
+
+      {paymentTarget && (
+        <AddPaymentModal
+          order={paymentTarget}
+          saving={addPaymentMutation.isPending}
+          onClose={() => setPaymentTarget(null)}
+          onSubmit={(input) =>
+            addPaymentMutation.mutate(
+              { id: paymentTarget.id, input },
+              {
+                onSuccess: (order) => {
+                  showToast("success", t("pos.outstanding.paymentRecorded"));
+                  setPaymentTarget(null);
+                  setSelectedId(order.id);
+                },
+              },
+            )
+          }
+        />
       )}
 
       <PosToaster toasts={toasts} onDismiss={dismiss} />
@@ -617,6 +693,8 @@ function OrderDetailView({ order }: { order: OrderDetail }) {
   const { t } = useTranslation();
   const totals = getOrderTotals(order);
   const payment = order.payment ?? order.payments?.[0];
+  const paidTotal = toMoney(order.paidTotal);
+  const balanceDue = toMoney(order.balanceDue);
 
   return (
     <div className="space-y-4">
@@ -633,6 +711,14 @@ function OrderDetailView({ order }: { order: OrderDetail }) {
       </div>
 
       <div className="grid grid-cols-2 gap-2">
+        <InfoTile
+          label={t("pos.orders.orderId")}
+          value={order.orderNumber}
+        />
+        <InfoTile
+          label={t("pos.orders.invoice")}
+          value={order.invoiceNumber}
+        />
         <InfoTile
           label={t("pos.orders.dailySerial")}
           value={order.dailySerial != null ? `#${order.dailySerial}` : "-"}
@@ -705,21 +791,47 @@ function OrderDetailView({ order }: { order: OrderDetail }) {
           value={formatMoney(totals.netTotal)}
           strong
         />
-        {payment && (
-          <>
-            <TotalsRow
-              label={t("pos.sale.paidAmount")}
-              value={formatMoney(payment.paidAmount)}
-            />
-            {toMoney(payment.changeAmount) > 0 && (
-              <TotalsRow
-                label={t("pos.sale.change")}
-                value={formatMoney(payment.changeAmount)}
-              />
-            )}
-          </>
+        <TotalsRow
+          label={t("pos.outstanding.paid")}
+          value={formatMoney(paidTotal)}
+        />
+        {balanceDue > 0 && (
+          <TotalsRow
+            label={t("pos.orders.balanceDue")}
+            value={formatMoney(balanceDue)}
+          />
+        )}
+        {payment && toMoney(payment.changeAmount) > 0 && (
+          <TotalsRow
+            label={t("pos.sale.change")}
+            value={formatMoney(payment.changeAmount)}
+          />
         )}
       </div>
+
+      {order.payments && order.payments.length > 1 && (
+        <div className="space-y-2 rounded-xl border border-border/70 px-4 py-3">
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+            {t("pos.orders.payments")}
+          </p>
+          <ul className="space-y-2">
+            {order.payments.map((entry) => (
+              <li
+                key={entry.id}
+                className="flex items-center justify-between gap-3 text-sm"
+              >
+                <span className="text-muted-foreground">
+                  {entry.paymentType}
+                  {entry.note?.trim() ? ` · ${entry.note}` : ""}
+                </span>
+                <span className="font-medium tabular-nums">
+                  {formatMoney(entry.paidAmount)}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {order.notes?.trim() && (
         <div className="rounded-xl border border-border/60 bg-muted/30 px-4 py-3">
@@ -735,159 +847,111 @@ function OrderDetailView({ order }: { order: OrderDetail }) {
   );
 }
 
-function ReceiptView({ receipt }: { receipt: OrderReceipt }) {
+function AddPaymentModal({
+  order,
+  saving,
+  onClose,
+  onSubmit,
+}: {
+  order: OrderDetail;
+  saving: boolean;
+  onClose: () => void;
+  onSubmit: (input: {
+    paymentType: PaymentType;
+    paidAmount: number;
+    note: string | null;
+  }) => void;
+}) {
   const { t } = useTranslation();
-  const totals = receipt.totals;
-  const payment = receipt.payments?.[0];
+  const balanceDue = toMoney(order.balanceDue);
+  const [paymentType, setPaymentType] = useState<PaymentType>("CASH");
+  const [paidAmount, setPaidAmount] = useState(String(balanceDue));
+  const [note, setNote] = useState("");
+  const amount = Number(paidAmount);
+  const amountError =
+    !Number.isFinite(amount) || amount <= 0
+      ? t("pos.outstanding.amountGreaterThanZero")
+      : amount > balanceDue
+        ? t("pos.outstanding.amountTooHigh")
+        : null;
 
   return (
-    <div
-      id="receipt-print"
-      className="mx-auto max-w-sm rounded-xl border border-dashed border-border bg-card px-5 py-5 text-sm"
+    <PosModal
+      title={t("pos.outstanding.addPayment")}
+      description={order.invoiceNumber}
+      onClose={onClose}
+      closeLabel={t("pos.common.close")}
     >
-      <div className="text-center">
-        <p className="text-base font-bold text-foreground">
-          {receipt.shopInfo.name}
-        </p>
-        {receipt.shopInfo.address && (
-          <p className="mt-0.5 text-xs text-muted-foreground">
-            {receipt.shopInfo.address}
-          </p>
-        )}
-        {receipt.shopInfo.phone && (
-          <p className="text-xs text-muted-foreground">
-            {receipt.shopInfo.phone}
-          </p>
-        )}
-      </div>
-
-      <div className="my-3 border-t border-dashed border-border" />
-
-      <div className="space-y-1 text-xs">
-        <div className="flex justify-between gap-3">
-          <span className="text-muted-foreground">{t("pos.orders.dailySerial")}</span>
-          <span className="font-medium text-foreground">
-            #{receipt.dailySerial ?? "-"}
-          </span>
-        </div>
-        <div className="flex justify-between gap-3">
-          <span className="text-muted-foreground">{t("pos.orders.invoice")}</span>
-          <span className="font-medium text-foreground">
-            {receipt.invoiceNumber}
-          </span>
-        </div>
-        <div className="flex justify-between gap-3">
-          <span className="text-muted-foreground">{t("pos.orders.date")}</span>
-          <span className="font-medium text-foreground">
-            {formatDate(receipt.date)}
-          </span>
-        </div>
-        <div className="flex justify-between gap-3">
-          <span className="text-muted-foreground">{t("pos.orders.customer")}</span>
-          <span className="font-medium text-foreground">
-            {receipt.customer.name}
-          </span>
-        </div>
-        <div className="flex justify-between gap-3">
-          <span className="text-muted-foreground">{t("pos.orders.cashier")}</span>
-          <span className="font-medium text-foreground">
-            {getOrderCashierName(receipt.cashier)}
-          </span>
-        </div>
-      </div>
-
-      <div className="my-3 border-t border-dashed border-border" />
-
-      <ul className="space-y-2">
-        {receipt.items.map((item, idx) => (
-          <li key={idx} className="flex items-start justify-between gap-3">
-            <div className="min-w-0">
-              <p className="truncate text-foreground">{item.productName}</p>
-              <p className="text-xs tabular-nums text-muted-foreground">
-                {item.quantity} {"\u00d7"}{" "}
-                {formatMoney(toMoney(item.unitPrice) - toMoney(item.discount))}
-              </p>
-            </div>
-            <span className="shrink-0 font-medium tabular-nums text-foreground">
-              {formatMoney(item.totalAmount)}
-            </span>
-          </li>
-        ))}
-      </ul>
-
-      <div className="my-3 border-t border-dashed border-border" />
-
-      <div className="space-y-1.5">
-        <TotalsRow
-          label={t("pos.sale.subtotal")}
-          value={formatMoney(totals.subtotal)}
+      <div className="mt-4 space-y-4">
+        <InfoTile
+          label={t("pos.orders.balanceDue")}
+          value={formatMoney(balanceDue)}
         />
-        {toMoney(totals.itemDiscount) > 0 && (
-          <TotalsRow
-            label={t("pos.sale.itemDiscount")}
-            value={formatMoney(totals.itemDiscount)}
-            negative
+        <div className="space-y-1.5">
+          <label className="text-xs font-semibold text-muted-foreground">
+            {t("pos.sale.paymentType")}
+          </label>
+          <Select
+            value={paymentType}
+            onChange={(event) =>
+              setPaymentType(event.target.value as PaymentType)
+            }
+          >
+            {PAYMENT_OPTIONS.map((option) => (
+              <option key={option} value={option}>
+                {option}
+              </option>
+            ))}
+          </Select>
+        </div>
+        <div className="space-y-1.5">
+          <label className="text-xs font-semibold text-muted-foreground">
+            {t("pos.sale.paidAmount")}
+          </label>
+          <Input
+            type="number"
+            min={0}
+            max={balanceDue}
+            value={paidAmount}
+            onChange={(event) => setPaidAmount(event.target.value)}
           />
-        )}
-        {toMoney(totals.orderDiscount) > 0 && (
-          <TotalsRow
-            label={t("pos.sale.orderDiscount")}
-            value={formatMoney(totals.orderDiscount)}
-            negative
+          {amountError && (
+            <p className="text-xs font-medium text-destructive">{amountError}</p>
+          )}
+        </div>
+        <div className="space-y-1.5">
+          <label className="text-xs font-semibold text-muted-foreground">
+            {t("pos.sale.orderNotes")}
+          </label>
+          <Input
+            value={note}
+            onChange={(event) => setNote(event.target.value)}
           />
-        )}
-        {toMoney(totals.deliveryFee) > 0 && (
-          <TotalsRow
-            label={t("pos.orders.deliveryFee")}
-            value={formatMoney(totals.deliveryFee)}
-          />
-        )}
-        {toMoney(totals.taxAmount) > 0 && (
-          <TotalsRow
-            label={t("pos.orders.tax")}
-            value={formatMoney(totals.taxAmount)}
-          />
-        )}
-        <div className="my-1 border-t border-dashed border-border" />
-        <TotalsRow
-          label={t("pos.orders.total")}
-          value={formatMoney(totals.netTotal)}
-          strong
-        />
-        {payment && (
-          <>
-            <TotalsRow
-              label={t("pos.sale.paidAmount")}
-              value={formatMoney(payment.paidAmount)}
-            />
-            {toMoney(payment.changeAmount) > 0 && (
-              <TotalsRow
-                label={t("pos.sale.change")}
-                value={formatMoney(payment.changeAmount)}
-              />
-            )}
-          </>
-        )}
+        </div>
+        <div className="flex justify-end gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onClose}
+            disabled={saving}
+          >
+            {t("pos.common.cancel")}
+          </Button>
+          <Button
+            type="button"
+            disabled={Boolean(amountError) || saving}
+            onClick={() =>
+              onSubmit({
+                paymentType,
+                paidAmount: amount,
+                note: note.trim() || null,
+              })
+            }
+          >
+            {saving ? t("pos.common.loading") : t("pos.common.save")}
+          </Button>
+        </div>
       </div>
-
-      {receipt.notes?.trim() && (
-        <>
-          <div className="my-3 border-t border-dashed border-border" />
-          <div>
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-              {t("pos.sale.orderNotes")}
-            </p>
-            <p className="mt-1 whitespace-pre-wrap text-xs text-foreground">
-              {receipt.notes}
-            </p>
-          </div>
-        </>
-      )}
-
-      <div className="my-3 border-t border-dashed border-border" />
-      <p className="text-center text-xs text-muted-foreground">
-        {t("pos.orders.thankYou")}
-      </p>
-    </div>
+    </PosModal>
   );
 }

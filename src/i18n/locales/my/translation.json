@@ -15,6 +15,7 @@
     "show": "ပြပါ",
     "hide": "ဖျောက်ပါ",
     "errorFallback": "ဝင်ရောက်မှု မအောင်မြင်ပါ။ ထပ်မံကြိုးစားပါ။",
+    "deviceConflict": "အခြား device တွင် ဝင်ရောက်ထားပြီးဖြစ်သည်။ super-admin ထံ user ကို sign out ခိုင်းပါ သို့မဟုတ် device limit တိုးပါ။",
     "brand": {
       "company": "Favourite Myanmar Co.,Ltd.",
       "subtitle": "POS စနစ်",
@@ -54,9 +55,12 @@
       "inTransit": "လမ်းကြောင်း",
       "delivered": "ပို့ဆောင်ပြီး",
       "customers": "ဖောက်သည်များ",
+      "outstanding": "အကြွေးကျန်",
       "reports": "အစီရင်ခံများ",
       "settings": "ဆက်တင်များ",
-      "helpCenter": "အကူအညီစင်တာ"
+      "helpCenter": "အကူအညီစင်တာ",
+      "userManagement": "User Management",
+      "branchManagement": "Branch Management"
     }
   },
   "header": {
@@ -93,9 +97,87 @@
       "stockList": "စတော့ စာရင်း",
       "orderHistory": "အော်ဒါ မှတ်တမ်း",
       "member": "အဖွဲ့ဝင်",
+      "outstanding": "အကြွေးကျန်",
       "summaryReport": "အကျဉ်းချုပ် အစီရင်ခံ",
       "products": "Products",
-      "expenses": "Expenses"
+      "expenses": "Expenses",
+      "ownerIntegration": "Owner API ချိတ်ဆက်မှု",
+      "userManagement": "User Management",
+      "branchManagement": "Branch Management"
+    },
+    "userManagement": {
+      "title": "User Management",
+      "description": "POS user များ ဖန်တီးခြင်း၊ device limit သတ်မှတ်ခြင်းနှင့် session များ revoke လုပ်ခြင်း။",
+      "createUser": "User အသစ်",
+      "loadError": "User များ load မရပါ။",
+      "maxDevices": "Max devices",
+      "activeSessions": "Active sessions",
+      "status": "Status",
+      "active": "Active",
+      "inactive": "Inactive",
+      "sessions": "Sessions",
+      "resetPassword": "Reset password",
+      "deactivate": "Deactivate",
+      "activate": "Activate",
+      "revokeAll": "Revoke all sessions",
+      "initialPassword": "Initial password",
+      "newPassword": "New password",
+      "noSessions": "Session မရှိပါ။",
+      "revoked": "Revoked"
+    },
+    "users": {
+      "description": "POS user များ ဖန်တီးခြင်း၊ device limit သတ်မှတ်ခြင်းနှင့် active session များ revoke လုပ်ခြင်း။",
+      "add": "User အသစ်",
+      "loadError": "User များ load မရပါ။",
+      "searchPlaceholder": "Username ဖြင့် ရှာပါ…",
+      "filterByRole": "Role ဖြင့် filter",
+      "empty": "User မရှိပါ။",
+      "username": "Username",
+      "displayName": "Display name",
+      "usernameChangeNote": "Username ပြောင်းလျှင် user အား device အားလုံးမှ sign out လုပ်ပါမည်။",
+      "role": "Role",
+      "sessions": "Sessions",
+      "createdAt": "Created",
+      "sessionCount": "{{active}} / {{limit}} devices",
+      "viewSessions": "Sessions",
+      "sessionsLoadError": "Session များ load မရပါ။",
+      "createTitle": "User အသစ်",
+      "createSubmit": "User ဖန်တီး",
+      "editTitle": "{{username}} ပြင်ရန်",
+      "newPasswordOptional": "New password (optional)",
+      "status": "Status",
+      "active": "Active",
+      "inactive": "Inactive",
+      "roleOwner": "Owner",
+      "roleAdmin": "Admin",
+      "roleStaff": "Staff",
+      "roleMonitor": "Monitor",
+      "sessionsTitle": "Sessions — {{username}}",
+      "noSessions": "Session မရှိပါ။",
+      "device": "Device",
+      "loggedInAt": "Logged in",
+      "expiresAt": "Expires",
+      "unknownDevice": "Unknown device",
+      "lastSeenAt": "Last seen",
+      "revoke": "Session revoke",
+      "revoked": "Revoked",
+      "revokeTitle": "Session revoke လုပ်မလား?",
+      "revokeDescription": "\"{{device}}\" ချက်ချင်း logout ဖြစ်ပါမည်။ device slot ရှိပါက ထပ်မံ login လုပ်နိုင်ပါသည်။"
+    },
+    "branches": {
+      "description": "Branch အသစ်များ ဖန်တီးခြင်းနှင့် branch name၊ contact နှင့် active status စီမံခြင်း။",
+      "add": "Branch အသစ်",
+      "loadError": "Branch များ load မရပါ။",
+      "empty": "Branch မရှိပါ။",
+      "code": "Code",
+      "codeMin": "Code အနည်းဆုံး 2 လုံး",
+      "codeFormat": "Code တွင် စာလုံး၊ ဂဏန်းနှင့် underscore သာ",
+      "name": "Name",
+      "address": "Address",
+      "phone": "Phone",
+      "createTitle": "Branch အသစ်",
+      "createSubmit": "Branch ဖန်တီး",
+      "editTitle": "{{name}} ပြင်ရန်"
     },
     "pages": {
       "comingSoon": "ဤမော်ဂျူသည် မကြာမီ ထည့်သွင်းပါမည်။",
@@ -204,6 +286,8 @@
       "total": "စုစုပေါင်း",
       "checkout": "ရောင်းချ ပြီးမြောက်",
       "processing": "လုပ်ဆောင်နေသည်...",
+      "readOnlyCheckout": "View only — checkout disabled",
+      "checkoutDefaultBranchOnly": "ရောင်းချရန် သင့် home branch သို့ ပြန်ပြောင်းပါ",
       "checkoutError": "Checkout မအောင်မြင်ပါ။",
       "successTitle": "ရောင်းချ ပြီးပါပြီ",
       "newSale": "ရောင်းချ အသစ်",
@@ -222,9 +306,12 @@
       "loadMore": "Load more products",
       "productsShown": "{{shown}} / {{total}}",
       "paidTooLow": "Paid amount must be at least the net total.",
+      "creditCustomerRequired": "အကြွေးရောင်းရန် customer ရွေးပါ။",
+      "creditSale": "အကြွေးရောင်း",
+      "creditSaleHint": "ဤအော်ဒါကို customer အကြွေးအဖြစ် သိမ်းမည်။ လက်ကျန် {{amount}}။",
+      "saveCreditSale": "အကြွေးရောင်း သိမ်းရန်",
       "allCategories": "အမျိုးအစားအားလုံး",
       "allSubCategories": "ခွဲအမျိုးအစားအားလုံး",
-      "resetCategories": "အမျိုးအစား reset",
       "resetCategories": "အမျိုးအစား reset"
     },
     "orders": {
@@ -232,13 +319,16 @@
       "futureDescription": "အနာဂတ် ရက်စွဲဖြင့် စီစဉ်ထားသော ရောင်းချမှုများ။",
       "historyDescription": "ယခင် အော်ဒါများကို ရှာဖွေကြည့်ရှုပါ။",
       "pendingDescription": "ဆောင်ရွက်ဆဲ အော်ဒါများ။ ဤနေရာတွင် ပြီးမြောက်ရန် သို့မဟုတ် ပယ်ဖျက်ပါ။",
-      "searchPlaceholder": "Invoice သို့ customer ရှာရန်...",
+      "searchPlaceholder": "Order ID, invoice သို့ customer ရှာရန်...",
       "empty": "အော်ဒါ မတွေ့ပါ။",
+      "orderId": "Order ID",
       "invoice": "Invoice",
       "dailySerial": "No.",
       "customer": "Customer",
       "total": "စုစုပေါင်း",
+      "balanceDue": "လက်ကျန်",
       "payment": "ငွေပေးချေမှု",
+      "payments": "ငွေပေးချေမှုများ",
       "date": "ရက်စွဲ",
       "cashier": "Cashier",
       "status": "အခြေအနေ",
@@ -258,7 +348,19 @@
       "items": "ပစ္စည်းများ",
       "deliveryFee": "ပို့ဆောင်ခ",
       "tax": "အခွန်",
-      "thankYou": "ဝယ်ယူအားပေးမှုအတွက် ကျေးဇူးတင်ပါသည်။"
+      "thankYou": "ဝယ်ယူအားပေးမှုအတွက် ကျေးဇူးတင်ပါသည်။",
+      "orderId": "Order ID",
+      "invoiceNo": "Invoice No",
+      "printTime": "Print time",
+      "orderDateTime": "Order date/time",
+      "colName": "Name",
+      "colQty": "Qty",
+      "colPrice": "Price",
+      "colAmount": "Amount",
+      "netTotal": "Net Total",
+      "payAmount": "Pay Amount",
+      "change": "Change",
+      "paymentContacts": "KBZ Pay / Wave Pay"
     },
     "stock": {
       "description": "လက်ရှိ inventory balance။",
@@ -289,7 +391,9 @@
       "dateTo": "ပြီးဆုံးရက်",
       "movementHistory": "Restock history",
       "historyDescription": "Manual stock entries added through restock.",
-      "noMovements": "No restock records found.",
+      "viewingBranch": "Showing restock history for {{branch}}.",
+      "noMovements": "No restock records found for this branch.",
+      "noMovementsFiltered": "No restock records match your search or date filters. Try Reset.",
       "searchProduct": "အမည် သို့မဟုတ် ကုဒ်ဖြင့် ရှာပါ...",
       "noProductsFound": "ကုန်ပစ္စည်း မတွေ့ပါ။",
       "by": "ပြုလုပ်သူ"
@@ -356,7 +460,7 @@
     },
     "members": {
       "description": "Member များကို စီမံခန့်ခွဲပါ။",
-      "searchPlaceholder": "Member ရှာရန်...",
+      "searchPlaceholder": "အမည် သို့မဟုတ် ဖုန်းနံပါတ်ဖြင့် ရှာရန်...",
       "empty": "Member မတွေ့ပါ။",
       "add": "Member ထည့်ရန်",
       "edit": "Member ပြင်ရန်",
@@ -375,6 +479,21 @@
       "deleteTitle": "Member ဖျက်ရန်",
       "deleteConfirm": "{{name}} ကို ဖျက်မှာ သေချာပါသလား။ ဤလုပ်ဆောင်ချက်ကို ပြန်လည် မရနိုင်ပါ။"
     },
+    "outstanding": {
+      "title": "အကြွေးကျန်စာရင်း",
+      "description": "မပေးရသေးသော ပြီးမြောက်ပြီး invoices ရှိသော customers။",
+      "searchPlaceholder": "Customer, phone သို့ invoice ရှာရန်...",
+      "empty": "အကြွေးကျန် မတွေ့ပါ။",
+      "orders": "Orders",
+      "paid": "ပေးပြီး",
+      "totalOutstanding": "အကြွေးကျန်",
+      "viewOrders": "Orders ကြည့်ရန်",
+      "addPayment": "ငွေပေးရန်",
+      "pay": "ပေးရန်",
+      "paymentRecorded": "ငွေပေးချေမှု မှတ်တမ်းတင်ပြီးပါပြီ။",
+      "amountGreaterThanZero": "ပမာဏသည် သုညထက် ကြီးရပါမည်။",
+      "amountTooHigh": "ပမာဏသည် လက်ကျန်ထက် မကျော်ရပါ။"
+    },
     "reports": {
       "saleDescription": "ရွေးချယ်ထားသော ကာလအတွက် product sales report။",
       "summaryDescription": "Daily closing summary နှင့် cash in hand။",
@@ -384,7 +503,8 @@
       "soldQty": "Sold qty",
       "gross": "Gross",
       "net": "Net",
-      "profit": "Est. profit",
+      "unitCost": "Unit cost",
+      "profit": "Profit",
       "salesSummary": "Sales summary",
       "orderCount": "Orders",
       "expenses": "Expenses",
@@ -406,15 +526,50 @@
       "heroTitle": "Account & store settings",
       "heroText": "Manage passwords, staff access, and product catalog data from one place.",
       "passwordTabDesc": "Update your login password securely.",
+      "shopTabDesc": "Receipt တွင် ပုံနှိပ်မည့် ဆိုင်အမည်၊ လိပ်စာနှင့် ဖုန်းနံပါတ်များ။",
       "staffTabDesc": "Create new staff or admin accounts.",
       "loyaltyTabDesc": "Member points cashback rate သတ်မှတ်ရန် (tracking only).",
       "tabs": {
         "password": "Password",
+        "shop": "ဆိုင်",
         "staff": "Staff",
         "excel": "Import / Export",
         "loyalty": "Points"
       },
       "excelDescription": "Import or export the product catalog as an Excel file.",
+      "shopName": "ဆိုင်အမည်",
+      "shopAddress": "လိပ်စာ",
+      "shopPhone": "ဖုန်းနံပါတ်များ",
+      "shopPhonePlaceholder": "09-xxx, 09-yyy",
+      "receiptPaperWidth": "Receipt စက္ကူအကျယ်",
+      "receiptPaperWidthOption58": "၅၈ mm (thermal သေး)",
+      "receiptPaperWidthOption65": "၆၅ mm",
+      "receiptPaperWidthOption80": "၈၀ mm (POS-80C / standard)",
+      "receiptPaperShopDefault": "ဆိုင်၏ default ({{width}} mm)",
+      "receiptPaperOptionA4": "A4 (ရုံးသုံး printer)",
+      "receiptPaperOptionCustom": "စိတ်ကြိုက် အကျယ်",
+      "receiptPaperCustomWidth": "စိတ်ကြိုက် အကျယ် (mm)",
+      "receiptPaperDeviceOnlyHint": "ဤစက္ကူအရွယ်အစားသည် ဤစက်အတွက်သာ သက်ဆိုင်ပါသည်။",
+      "receiptPaperReset": "ဆိုင်၏ default သို့ ပြန်ထားရန်",
+      "receiptPaperSetShopDefault": "ဆိုင်၏ default အဖြစ် သတ်မှတ်ရန်",
+      "shopDefaultPaperSaved": "ဆိုင် default စက္ကူအကျယ် သိမ်းပြီးပါပြီ။",
+      "receiptPaperWidthHint": "Chrome print တွင် အကျယ်တူညီသော စက္ကူအမျိုးအစား ရွေးပါ၊ margins None ထားပါ။",
+      "shopHint": "ဆိုင်အမည်၊ လိပ်စာနှင့် ဖုန်းနံပါတ်များသည် receipt ထိပ်တွင် ပေါ်ပါမည်။",
+      "shopSettingsSaved": "ဆိုင်အချက်အလက် သိမ်းပြီးပါပြီ။",
+      "deviceSettingsSaved": "Device settings သိမ်းပြီးပါပြီ။",
+      "sections": {
+        "general": "General Settings",
+        "localDevice": "Local Device Settings",
+        "shopInfo": "Additional Shop Information",
+        "featureControl": "General Feature Control Settings"
+      },
+      "roles": {
+        "superAdmin": "Super Admin",
+        "owner": "Owner",
+        "admin": "Admin",
+        "staff": "Staff",
+        "monitor": "Monitor"
+      },
       "pointsCashbackPercent": "Cashback percent",
       "pointsCashbackHint": "Points = sale total × percent ÷ 100. Example: 0.1% on 100,000 = 100 points. Sale page တွင် redeem မလုပ်ပါ။",
       "pointsSettingsSaved": "Points settings saved.",
@@ -449,8 +604,172 @@
       "categoriesLoadError": "Could not load categories. Check that the backend is running.",
       "username": "Username",
       "role": "Role",
+      "allowedDevices": "Allowed devices",
+      "roleAdmin": "Admin",
+      "roleStaff": "Staff",
+      "roleMonitor": "Monitor",
       "createStaff": "Create staff",
       "staffCreated": "Staff account created."
+    },
+    "ownerIntegration": {
+      "title": "Owner API ချိတ်ဆက်မှု",
+      "description": "n8n နဲ့ချိတ်ရန် API key ထုတ်ပြီး branch အလိုက် report API များကို read-only နည်းဖြင့် ခေါ်နိုင်ပါသည်။",
+      "tabApiKey": "API Key",
+      "tabTutorial": "လမ်းညွှန်",
+      "keySectionTitle": "API key စီမံခန့်ခွဲမှု",
+      "keySectionDescription": "အသုံးပြုနေသော key တစ်ခုတည်းသာ ရှိနိုင်ပါသည်။ key အသစ်ထုတ်လိုက်လျှင် key အဟောင်း ချက်ချင်းပိတ်သွားပါမည်။",
+      "statusLabel": "Key အခြေအနေ",
+      "prefixLabel": "Key prefix",
+      "createdAtLabel": "ဖန်တီးခဲ့ချိန်",
+      "lastUsedAtLabel": "နောက်ဆုံးအသုံးပြုချိန်",
+      "notAvailable": "မရှိသေးပါ",
+      "neverUsed": "မသုံးရသေးပါ",
+      "status": {
+        "active": "အသုံးပြုနေသည်",
+        "inactive": "ပိတ်ထား",
+        "notGenerated": "Key မထုတ်ရသေးပါ"
+      },
+      "regenerate": "Key အသစ်ထုတ်ရန်",
+      "confirmRotate": "API key အသစ်ထုတ်မလား? Key အဟောင်းသည် ချက်ချင်းအသုံးမပြုနိုင်တော့ပါ။",
+      "keyGeneratedTitle": "API key အသစ်ထုတ်ပြီးပါပြီ",
+      "keyGeneratedWarning": "ယခုချက်ချင်း copy လုပ်ပြီး လုံခြုံသောနေရာတွင် သိမ်းပါ။ နောက်တစ်ကြိမ် ပြန်မပြပါ။",
+      "copyKey": "Key ကို copy လုပ်ရန်",
+      "copied": "Copy လုပ်ပြီး",
+      "errorLoad": "Integration key အချက်အလက် မရယူနိုင်ပါ။",
+      "guideTitle": "n8n ချိတ်ဆက်မှု လမ်းညွှန်",
+      "guideDescription": "Branch report များကို n8n နှင့် အခြားကိရိယာများသို့ ဆွဲယူရန် အဆင့်လိုက် လမ်းညွှန်။",
+      "headersTitle": "လိုအပ်သော header များ",
+      "exampleBranchIds": "သင့်အကောင့်တွင်ရှိသော ဥပမာ branch ID များ:",
+      "branchFallback": "Branch ID များ မပေါ်သေးပါ။ Refresh လုပ်ပါ သို့မဟုတ် ပြန်လည်ဝင်ပါ၊ ပြီးလျှင် <branch-id> ကိုလက်ဖြင့်ထည့်ပါ။",
+      "securityTitle": "လုံခြုံရေး သတိပြုရန်",
+      "securityNote1": "API key ကို public repo၊ screenshot သို့ chat မှာ မမျှဝေပါနှင့်။",
+      "securityNote2": "Key ပေါက်ကြားသွားနိုင်သည်ဟု သံသယရှိပါက ချက်ချင်း key အသစ်ထုတ်ပြီး အဟောင်းကိုပိတ်ပါ။",
+      "doc": {
+        "copy": "Copy",
+        "copied": "Copy လုပ်ပြီး",
+        "tocTitle": "ဤစာမျက်နှာတွင်",
+        "toc": {
+          "overview": "အကျဉ်းချုပ်",
+          "prerequisites": "စတင်မီ",
+          "authentication": "Authentication",
+          "endpoints": "API endpoints",
+          "n8n-setup": "n8n: HTTP Request",
+          "n8n-output": "n8n: JSON output",
+          "n8n-automation": "n8n: အလိုအလျောက်ပို့",
+          "security": "လုံခြုံရေး"
+        },
+        "table": {
+          "paramName": "Parameter",
+          "required": "လိုအပ်",
+          "description": "အဓိပ္ပါယ်",
+          "example": "ဥပမာ",
+          "field": "n8n field",
+          "value": "တန်ဖိုး",
+          "yes": "ဟုတ်",
+          "no": "မလို"
+        },
+        "params": {
+          "fromDate": "Report စတင်ရက် (YYYY-MM-DD)။",
+          "toDate": "Report အဆုံးရက် (YYYY-MM-DD)။",
+          "branchId": "Owner ဝင်ခွင့်ရှိ branch UUID (တစ်ကြိမ်လျှင် branch တစ်ခု)။",
+          "page": "List endpoint အတွက် page နံပါတ် (default 1)။",
+          "limit": "တစ်မျက်နှာလျှင် row အရေအတွက် (default 20)။"
+        },
+        "overview": {
+          "title": "အကျဉ်းချုပ်",
+          "body": "Owner API integration ဖြင့် API key တစ်ခုတည်းဖြင့် read-only report endpoint များကို ခေါ်နိုင်ပါသည်။ n8n workflow ဖြင့် branch အလိုက် sales၊ cash၊ inventory ဒေတာကို Sheets၊ Telegram သို့ email ဖြင့် ပို့နိုင်ပါသည်။"
+        },
+        "prerequisites": {
+          "title": "စတင်မီ",
+          "step1": "API Key tab တွင် key ထုတ်ပြီး password manager သို့ n8n credential တွင် သိမ်းပါ။",
+          "step2": "Branch ID များကို မှတ်သားပါ — request တိုင်းတွင် branchId လိုအပ်ပါသည်။",
+          "step3": "n8n server မှ POS API URL သို့ ရောက်နိုင်ကြောင်း စစ်ပါ (deploy လုပ်ထားသော backend host)။",
+          "openApiKeyTab": "API Key tab ဖွင့်ရန်"
+        },
+        "authentication": {
+          "title": "Authentication",
+          "body": "Request တိုင်းတွင် owner integration key ပို့ပါ။ OAuth မရှိ — x-api-key header ကို မဖြစ်မနေထည့်ရပါမည်။",
+          "apiKeyHeader": "ထုတ်ထားသော owner key (pos_owner_ prefix)။",
+          "contentTypeHeader": "Optional — application/json ကို အသုံးပြုရန်။"
+        },
+        "endpoints": {
+          "title": "API endpoints",
+          "intro": "Route အားလုံး GET — /api/integration/reports အောက်တွင်။ branchId သည် သင်ဝင်ခွင့်ရှိ branch နှင့် ကိုက်ညီရမည်။",
+          "sales": {
+            "title": "Sales report",
+            "description": "ရက်စွဲအပိုင်းအခြား product အလိုက် sales စုစုပေါင်း (pagination)။",
+            "responseHint": "items (rows), summary (စုစုပေါင်း), meta (pagination) ပါဝင်သည်။"
+          },
+          "cashSummary": {
+            "title": "Cash summary",
+            "description": "ရက်စွဲအပိုင်းအခြား sales၊ expenses၊ payment breakdown၊ cash-in-hand။",
+            "responseHint": "netSalesTotal, cashInHand, paymentSummary စသည့် flat JSON object။"
+          },
+          "inventory": {
+            "title": "Inventory balance",
+            "description": "Branch တစ်ခုအတွက် လက်ရှိ stock (pagination)။",
+            "responseHint": "sales နှင့် တူသော ပုံစံ — items, summary, meta။"
+          },
+          "summary": {
+            "title": "Summary",
+            "description": "Cash summary နှင့် တူသော ဒေတာ (dashboard alias route)။",
+            "responseHint": "Cash summary နှင့် JSON ပုံစံ တူညီသည်။"
+          }
+        },
+        "n8n": {
+          "setupTitle": "n8n: HTTP Request သတ်မှတ်ခြင်း",
+          "setupIntro": "n8n editor တွင် အောက်ပါအဆင့်များကို လိုက်နာပါ။ စမ်းသပ်ရန် Manual Trigger — ပြီးမှ Schedule ထည့်ပါ။",
+          "setupSteps": {
+            "step1": "Workflow အသစ် ဖန်တီးပြီး Manual Trigger node ထည့်ပါ။",
+            "step2": "HTTP Request node ထည့်ပြီး trigger နှင့် ချိတ်ပါ။",
+            "step3": "HTTP Request ဖွင့်ပြီး အောက်ဇယားရှိ field များကို သတ်မှတ်ပါ (sales endpoint ဥပမာ)။",
+            "step4": "x-api-key header တွင် key အမှန်ထည့်ပါ (n8n credential သုံးနိုင်ပါက ပိုကောင်း)။",
+            "step5": "Execute workflow / Test step နှိပ်ပြီး status 200 ရှိမရှိ စစ်ပါ။"
+          },
+          "httpRequestTable": {
+            "method": "Method",
+            "url": "URL",
+            "authentication": "Authentication",
+            "authenticationValue": "None (header သုံးပါ)",
+            "sendQuery": "Send Query Parameters",
+            "sendQueryValue": "ON",
+            "queryParams": "Query parameters",
+            "sendHeaders": "Send Headers",
+            "sendHeadersValue": "ON",
+            "headers": "Header parameters"
+          },
+          "outputTitle": "n8n: JSON output ဖတ်ခြင်း",
+          "output": {
+            "step1": "Request အောင်မြင်ပါက HTTP Request node ၏ OUTPUT → JSON tab ကို ဖွင့်ပါ။",
+            "step2": "Sales/inventory တွင် items, summary, meta ပါဝင်သည်။ product တစ်ခုချင်းစီ လိုပါက items အပေါ် Split Out node သုံးပါ။",
+            "step3": "နောက် node တွင် expression ဖြင့် field များ ခေါ်ပါ — summary.netAmount သို့ cash route တွင် netSalesTotal။",
+            "paginatedNote": "List endpoint သည် { items, summary, meta }။ Cash/summary route သည် netSalesTotal, cashInHand ပါ flat object။"
+          },
+          "expressions": {
+            "title": "Expression ဥပမာ (sales)",
+            "itemExample": "{{ $json.items[0].productName }}\n{{ $json.items[0].netAmount }}",
+            "summaryExample": "{{ $json.summary.netAmount }}\n{{ $json.summary.estimatedProfit }}",
+            "cashExample": "{{ $json.netSalesTotal }}\n{{ $json.cashInHand }}"
+          },
+          "automationTitle": "n8n: အလိုအလျောက်ပို့ခြင်း",
+          "automation": {
+            "step1": "စမ်းသပ်ပြီးပါက Manual Trigger ကို Schedule Trigger (ဥပမာ နေ့စဉ် 9:00) ဖြင့် အစားထိုးပါ။",
+            "step2": "HTTP Request နောက်တွင် Google Sheets Append Row သို့ Telegram Send Message ထည့်ပါ။",
+            "step3": "Column သို့ message text တွင် expression ဖြင့် map လုပ်ပါ။",
+            "sheetsTitle": "Google Sheets — column ဥပမာ",
+            "sheetsExample": "Date: {{ $now.format('yyyy-MM-dd') }}\nBranch net sales: {{ $json.netSalesTotal }}\nCash in hand: {{ $json.cashInHand }}",
+            "telegramTitle": "Telegram — message ဥပမာ",
+            "telegramExample": "Daily report\nNet sales: {{ $json.netSalesTotal }}\nOrders: {{ $json.orderCount }}"
+          }
+        },
+        "callout": {
+          "readOnlyTitle": "Read-only သာ",
+          "readOnlyBody": "Integration API များသည် order မဖန်တီး၊ stock မပြောင်း၊ user မပြင်နိုင်ပါ — owner account နှင့် ချိတ်ထားသော branch များ၏ report data သာ ပြန်ပေးသည်။",
+          "n8nTipTitle": "Tip",
+          "n8nTipBody": "API key ကို node ထဲ plain text မထားဘဲ n8n Credentials (Header Auth) တွင် သိမ်းပါ။",
+          "securityTitle": "Key ကို လုံခြုံစွာသိမ်းပါ"
+        }
+      }
     },
     "help": {
       "description": "အကူအညီနှင့် ပံ့ပိုးမှုရယူပါ",
@@ -476,11 +795,13 @@
       "numberRequired": "Enter a valid number",
       "minZero": "Must be zero or greater",
       "max100": "Must be 100 or less",
+      "paperWidthRange": "အကျယ် 30 mm နှင့် 120 mm ကြားတွင် ဖြစ်ရမည်",
       "amountMin": "Amount must be at least 1",
       "quantityMin": "Quantity must be at least 1",
       "dateRequired": "Date is required",
       "max64": "Must be 64 characters or less",
-      "max128": "Must be 128 characters or less"
+      "max128": "Must be 128 characters or less",
+      "invalidValue": "Invalid value"
     }
   }
 }

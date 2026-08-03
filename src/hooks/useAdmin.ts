@@ -93,6 +93,7 @@ function invalidateCatalogQueries(queryClient: ReturnType<typeof useQueryClient>
 
 export function useCreateProductWithStock() {
   const queryClient = useQueryClient();
+  const { currentBranchId } = useBranch();
 
   return useMutation({
     mutationFn: async (values: ProductFormValues): Promise<Product> => {
@@ -113,6 +114,7 @@ export function useCreateProductWithStock() {
       if (values.initialStockQty > 0) {
         await createStockMovement({
           productId: product.id,
+          branchId: currentBranchId,
           type: "IN",
           quantity: values.initialStockQty,
           buyPrice: values.buyPrice > 0 ? values.buyPrice : null,

@@ -3,12 +3,15 @@ import {
   DashboardSquare01Icon,
   Package01Icon,
   UserGroupIcon,
+  UserSettings01Icon,
   ChartHistogramIcon,
   Settings01Icon,
   CustomerSupportIcon,
+  Home01Icon,
   ArrowDown01Icon,
   ArrowUp01Icon,
 } from "@hugeicons/core-free-icons";
+import type { Role } from "@/types/auth";
 
 export interface SidebarChildItem {
   labelKey: string;
@@ -19,7 +22,7 @@ export interface SidebarMenuItem {
   labelKey: string;
   path: string;
   icon: IconSvgElement;
-  roles?: ("admin" | "staff")[];
+  roles?: Role[];
   children?: SidebarChildItem[];
 }
 
@@ -38,6 +41,18 @@ export const sidebarMenuSections: SidebarSection[] = [
         icon: DashboardSquare01Icon,
       },
       {
+        labelKey: "sidebar.menu.userManagement",
+        path: "/users",
+        icon: UserSettings01Icon,
+        roles: ["super_admin"],
+      },
+      {
+        labelKey: "sidebar.menu.branchManagement",
+        path: "/branches",
+        icon: Home01Icon,
+        roles: ["super_admin"],
+      },
+      {
         labelKey: "sidebar.menu.orders",
         path: "/orders",
         icon: Package01Icon,
@@ -51,6 +66,13 @@ export const sidebarMenuSections: SidebarSection[] = [
         labelKey: "sidebar.menu.customers",
         path: "/customers",
         icon: UserGroupIcon,
+        children: [
+          { labelKey: "sidebar.menu.customers", path: "/customers" },
+          {
+            labelKey: "sidebar.menu.outstanding",
+            path: "/customers/outstanding",
+          },
+        ],
       },
       {
         labelKey: "sidebar.menu.reports",

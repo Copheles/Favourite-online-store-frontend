@@ -1,13 +1,7 @@
-import { useMemo, useState } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ChevronDown, LayoutGrid, List, Pencil, Plus, Trash2, UserRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Form } from "@/components/ui/form";
-import { ApiErrorAlert } from "@/components/forms/ApiErrorAlert";
-import { FormTextField } from "@/components/forms/FormTextField";
-import { FormTextareaField } from "@/components/forms/FormTextareaField";
 import {
   EmptyState,
   ErrorState,
@@ -28,6 +22,7 @@ import {
   PosRecordCard,
   PosRecordCardList,
 } from "@/components/shared/pos/PosRecordCard";
+import { CustomerFormModal } from "@/components/shared/pos/CustomerFormModal";
 import { PosFilterSelect } from "@/components/shared/pos/PosFilterSelect";
 import { PosPagination } from "@/components/shared/pos/PosPagination";
 import { PosSearchBar } from "@/components/shared/pos/PosSearchBar";
@@ -35,6 +30,7 @@ import { CardGridSkeleton, TableSkeleton } from "@/components/shared/pos/TableSk
 import { useAppliedSearch } from "@/hooks/useAppliedSearch";
 import { useUrlEnumParam, useUrlLimit, useUrlPage, useUrlStringParam } from "@/hooks/useUrlQuery";
 import { useCustomerMutations, useCustomers } from "@/hooks/useCustomers";
+import { useAuth } from "@/hooks/useAuth";
 import {
   CONTACT_FILTERS,
   contactFilterToApi,
@@ -42,16 +38,12 @@ import {
 } from "@/lib/listFilters";
 import { PAGE_SIZE, PAGE_SIZE_OPTIONS } from "@/lib/queryConfig";
 import type { Customer } from "@/types/api";
-import {
-  getCustomerSchema,
-  type CustomerFormValues,
-} from "@/validation/customer.validation";
 import { cn } from "@/lib/utils";
-
 type ViewMode = "grid" | "list";
 
 export function CustomersPage() {
   const { t } = useTranslation();
+  const { canWrite } = useAuth();
   const {
     searchInput,
     setSearchInput,
@@ -107,10 +99,12 @@ export function CustomersPage() {
         title={t("pos.modules.member")}
         description={t("pos.members.description")}
         action={
-          <Button onClick={openCreate}>
-            <Plus className="size-4" />
-            {t("pos.members.add")}
-          </Button>
+          canWrite ? (
+            <Button onClick={openCreate}>
+              <Plus className="size-4" />
+              {t("pos.members.add")}
+            </Button>
+          ) : undefined
         }
       />
 
@@ -174,6 +168,7 @@ export function CustomersPage() {
             <CustomerCard
               key={row.id}
               customer={row}
+              readOnly={!canWrite}
               onEdit={() => openEdit(row)}
               onDelete={() => requestDelete(row)}
             />
@@ -197,19 +192,21 @@ export function CustomersPage() {
                   },
                 ]}
                 actions={
-                  <>
-                    <Button size="sm" variant="outline" onClick={() => openEdit(row)}>
-                      {t("pos.common.edit")}
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="text-destructive hover:bg-destructive/10 hover:text-destructive"
-                      onClick={() => requestDelete(row)}
-                    >
-                      {t("pos.common.delete")}
-                    </Button>
-                  </>
+                  canWrite ? (
+                    <>
+                      <Button size="sm" variant="outline" onClick={() => openEdit(row)}>
+                        {t("pos.common.edit")}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                        onClick={() => requestDelete(row)}
+                      >
+                        {t("pos.common.delete")}
+                      </Button>
+                    </>
+                  ) : undefined
                 }
               />
             ))}
@@ -236,19 +233,21 @@ export function CustomersPage() {
                       {row.pointsBalance ?? 0}
                     </PosTableCell>
                     <PosTableCell>
-                      <div className="flex gap-2">
-                        <Button size="sm" variant="outline" onClick={() => openEdit(row)}>
-                          {t("pos.common.edit")}
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="text-destructive hover:bg-destructive/10 hover:text-destructive"
-                          onClick={() => requestDelete(row)}
-                        >
-                          {t("pos.common.delete")}
-                        </Button>
-                      </div>
+                      {canWrite ? (
+                        <div className="flex gap-2">
+                          <Button size="sm" variant="outline" onClick={() => openEdit(row)}>
+                            {t("pos.common.edit")}
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                            onClick={() => requestDelete(row)}
+                          >
+                            {t("pos.common.delete")}
+                          </Button>
+                        </div>
+                      ) : null}
                     </PosTableCell>
                   </PosTableRow>
                 ))}
@@ -365,10 +364,12 @@ function getCustomerCardLabel(customer: Customer): string {
 
 function CustomerCard({
   customer,
+  readOnly,
   onEdit,
   onDelete,
 }: {
   customer: Customer;
+  readOnly?: boolean;
   onEdit: () => void;
   onDelete: () => void;
 }) {
@@ -389,24 +390,26 @@ function CustomerCard({
         </p>
       </div>
 
-      <div className="grid grid-cols-2 divide-x divide-border/60 border-t border-border/60 bg-card">
-        <button
-          type="button"
-          onClick={onEdit}
-          className="flex items-center justify-center py-3 text-muted-foreground transition-colors hover:bg-muted/40 hover:text-foreground"
-          aria-label={t("pos.common.edit")}
-        >
-          <Pencil className="size-4" />
-        </button>
-        <button
-          type="button"
-          onClick={onDelete}
-          className="flex items-center justify-center py-3 text-muted-foreground transition-colors hover:bg-destructive/8 hover:text-destructive"
-          aria-label={t("pos.common.delete")}
-        >
-          <Trash2 className="size-4" />
-        </button>
-      </div>
+      {!readOnly && (
+        <div className="grid grid-cols-2 divide-x divide-border/60 border-t border-border/60 bg-card">
+          <button
+            type="button"
+            onClick={onEdit}
+            className="flex items-center justify-center py-3 text-muted-foreground transition-colors hover:bg-muted/40 hover:text-foreground"
+            aria-label={t("pos.common.edit")}
+          >
+            <Pencil className="size-4" />
+          </button>
+          <button
+            type="button"
+            onClick={onDelete}
+            className="flex items-center justify-center py-3 text-muted-foreground transition-colors hover:bg-destructive/8 hover:text-destructive"
+            aria-label={t("pos.common.delete")}
+          >
+            <Trash2 className="size-4" />
+          </button>
+        </div>
+      )}
     </div>
   );
 }
@@ -444,78 +447,6 @@ function CustomerDeleteConfirmModal({
           {t("pos.common.delete")}
         </Button>
       </div>
-    </PosModal>
-  );
-}
-
-function CustomerFormModal({
-  customer,
-  isPending,
-  error,
-  onClose,
-  onSubmit,
-}: {
-  customer: Customer | null;
-  isPending: boolean;
-  error: unknown;
-  onClose: () => void;
-  onSubmit: (values: CustomerFormValues) => void;
-}) {
-  const { t } = useTranslation();
-  const schema = useMemo(() => getCustomerSchema(t), [t]);
-  const form = useForm<CustomerFormValues>({
-    resolver: zodResolver(schema),
-    defaultValues: {
-      name: customer?.name ?? "",
-      phone: customer?.phone ?? "",
-      address: customer?.address ?? "",
-      note: customer?.note ?? "",
-    },
-  });
-
-  return (
-    <PosModal
-      title={customer ? t("pos.members.edit") : t("pos.members.add")}
-      onClose={onClose}
-      closeLabel={t("pos.common.close")}
-    >
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3">
-          <FormTextField
-            control={form.control}
-            name="name"
-            label={t("pos.members.name")}
-          />
-          <FormTextField
-            control={form.control}
-            name="phone"
-            label={t("pos.members.phone")}
-          />
-          <FormTextField
-            control={form.control}
-            name="address"
-            label={t("pos.members.address")}
-          />
-          <FormTextareaField
-            control={form.control}
-            name="note"
-            label={t("pos.members.note")}
-            rows={3}
-          />
-          <ApiErrorAlert error={error} />
-          <div className="flex justify-end gap-2 pt-2">
-            <Button type="button" variant="outline" onClick={onClose}>
-              {t("pos.common.cancel")}
-            </Button>
-            <Button
-              type="submit"
-              disabled={isPending}
-            >
-              {t("pos.common.save")}
-            </Button>
-          </div>
-        </form>
-      </Form>
     </PosModal>
   );
 }

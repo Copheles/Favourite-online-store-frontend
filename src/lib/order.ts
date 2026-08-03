@@ -37,10 +37,12 @@ export function getOrderTotals(order: {
 }
 
 export function getOrderCashierName(
-  cashier?: { username: string } | string | null,
+  cashier?: { username: string; displayName?: string | null } | string | null,
 ): string {
   if (!cashier) return "-";
   if (typeof cashier === "string") return cashier;
+  const displayName = cashier.displayName?.trim();
+  if (displayName) return displayName;
   return cashier.username;
 }
 

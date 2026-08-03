@@ -63,10 +63,13 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const filteredSections = sidebarMenuSections
     .map((section) => ({
       ...section,
-      items: section.items.filter(
-        (item) =>
-          !item.roles || item.roles.includes(user?.role as "admin" | "staff")
-      ),
+      items: section.items.filter((item) => {
+        const role = user?.role ?? "staff";
+        if (item.roles?.includes("super_admin")) {
+          return role === "super_admin";
+        }
+        return !item.roles || item.roles.includes(role);
+      }),
     }))
     .filter((section) => section.items.length > 0);
 

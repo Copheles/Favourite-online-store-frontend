@@ -1,51 +1,46 @@
+import { useMemo } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import type { RootState, AppDispatch } from "@/redux/store";
 import { switchBranch } from "@/redux/slices/branchSlice";
 import { useAuth } from "./useAuth";
+import { isMonitorRole } from "@/types/auth";
 
 export function useBranch() {
   const dispatch = useDispatch<AppDispatch>();
-  const { user } = useAuth();
-  const { currentBranchId: storedBranchId, accessibleBranches } = useSelector(
-    (state: RootState) => state.branch,
-  );
+  const { user, hasStoreOperatorAccess, canWrite } = useAuth();
+  const currentBranchId = useSelector((state: RootState) => state.branch.currentBranchId);
+  const accessibleBranches = useSelector((state: RootState) => state.branch.accessibleBranches);
 
-  const isAdmin = user?.role?.toLowerCase() === "admin";
-  /** Cashiers are locked to their home branch; admins may view others. */
-  const currentBranchId =
-    (isAdmin
-      ? storedBranchId
-      : (user?.defaultBranchId ?? storedBranchId)) ?? undefined;
+  return useMemo(() => {
+    const isMonitor = isMonitorRole(user?.role);
+    const canSwitch = hasStoreOperatorAccess || isMonitor;
+    const resolvedId =
+      (canSwitch
+        ? (currentBranchId ?? user?.defaultBranchId)
+        : (user?.defaultBranchId ?? currentBranchId)) ?? undefined;
 
-  const currentBranch = accessibleBranches.find(
-    (branch) => branch.id === currentBranchId,
-  );
+    const currentBranch = accessibleBranches.find(
+      (b) => b.id === resolvedId,
+    );
 
-  const isDefaultBranch = currentBranchId === user?.defaultBranchId;
-  /** Catalog / product writes stay on default branch. */
-  const canWriteCatalog = Boolean(isAdmin && isDefaultBranch);
-  /** Admins may restock any accessible branch they are viewing. */
-  const canRestock = Boolean(isAdmin && currentBranchId);
-  /** Staff may record expenses on their home branch. */
-  const canManageExpenses = Boolean(currentBranchId && isDefaultBranch);
-  const canSwitchBranch = Boolean(isAdmin && accessibleBranches.length > 1);
+    const isDefaultBranch = resolvedId === user?.defaultBranchId;
+    const canWriteCatalog = Boolean(canWrite && hasStoreOperatorAccess && isDefaultBranch);
 
-  const handleSwitchBranch = (branchId: string) => {
-    if (!isAdmin) return;
-    dispatch(switchBranch(branchId));
-  };
-
-  return {
-    currentBranchId,
-    currentBranch,
-    accessibleBranches,
-    defaultBranchId: user?.defaultBranchId,
-    isDefaultBranch,
-    canWrite: canWriteCatalog,
-    canWriteCatalog,
-    canRestock,
-    canManageExpenses,
-    canSwitchBranch,
-    switchBranch: handleSwitchBranch,
-  };
+    return {
+      currentBranchId: resolvedId,
+      currentBranch,
+      accessibleBranches,
+      defaultBranchId: user?.defaultBranchId,
+      isDefaultBranch,
+      canWrite: canWriteCatalog,
+      canWriteCatalog,
+      canRestock: Boolean(canWrite && hasStoreOperatorAccess && resolvedId),
+      canManageExpenses: Boolean(canWrite && resolvedId && isDefaultBranch),
+      canSwitchBranch: Boolean(canSwitch && accessibleBranches.length > 1),
+      switchBranch: (branchId: string) => {
+        if (!canSwitch) return;
+        dispatch(switchBranch(branchId));
+      },
+    };
+  }, [user, hasStoreOperatorAccess, canWrite, currentBranchId, accessibleBranches, dispatch]);
 }

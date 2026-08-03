@@ -1,5 +1,4 @@
 import { useState, useRef, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
@@ -13,10 +12,9 @@ import {
   Sun02Icon,
 } from "@hugeicons/core-free-icons";
 import { useAuth } from "@/hooks/useAuth";
+import { useLogout } from "@/hooks/useLogout";
 import { useTheme } from "@/components/layout/ThemeProvider";
 import { Button } from "@/components/ui/button";
-import { logout } from "@/redux/slices/authSlice";
-import { useAppDispatch } from "@/redux/hooks";
 
 interface HeaderProps {
   onMenuToggle: () => void;
@@ -25,10 +23,9 @@ interface HeaderProps {
 
 export function Header({ onMenuToggle, pageTitle }: HeaderProps) {
   const { user } = useAuth();
+  const logoutMutation = useLogout();
   const { t, i18n } = useTranslation();
   const { theme, setTheme, resolvedTheme } = useTheme();
-  const dispatch = useAppDispatch();
-  const navigate = useNavigate();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -46,8 +43,7 @@ export function Header({ onMenuToggle, pageTitle }: HeaderProps) {
   }, []);
 
   function handleLogout() {
-    dispatch(logout());
-    navigate("/login");
+    logoutMutation.mutate();
   }
 
   function toggleLanguage() {

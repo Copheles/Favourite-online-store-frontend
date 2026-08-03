@@ -155,7 +155,7 @@ export function SaleReportPage() {
         </div>
       )}
 
-      {query.isLoading && !query.data && <TableSkeleton rows={8} cols={4} />}
+      {query.isLoading && !query.data && <TableSkeleton rows={8} cols={5} />}
       {query.isError && <ErrorState />}
       {!query.isLoading && rows.length === 0 && (
         <EmptyState message={t("pos.reports.empty")} />
@@ -178,8 +178,12 @@ export function SaleReportPage() {
                 fields={[
                   { label: t("pos.reports.soldQty"), value: row.soldQty },
                   {
-                    label: t("pos.reports.gross"),
-                    value: formatMoney(row.grossAmount),
+                    label: t("pos.reports.net"),
+                    value: formatMoney(row.netAmount),
+                  },
+                  {
+                    label: t("pos.reports.unitCost"),
+                    value: formatMoney(row.averageBuyPrice),
                   },
                   {
                     label: t("pos.reports.profit"),
@@ -209,6 +213,9 @@ export function SaleReportPage() {
                     {t("pos.reports.net")}
                   </PosTableHeaderCell>
                   <PosTableHeaderCell className="text-right">
+                    {t("pos.reports.unitCost")}
+                  </PosTableHeaderCell>
+                  <PosTableHeaderCell className="text-right">
                     {t("pos.reports.profit")}
                   </PosTableHeaderCell>
                 </tr>
@@ -233,6 +240,9 @@ export function SaleReportPage() {
                     </PosTableCell>
                     <PosTableCell className="text-right font-medium tabular-nums">
                       {formatMoney(row.netAmount)}
+                    </PosTableCell>
+                    <PosTableCell className="text-right tabular-nums text-muted-foreground">
+                      {formatMoney(row.averageBuyPrice)}
                     </PosTableCell>
                     <PosTableCell className="text-right font-semibold tabular-nums text-primary">
                       {formatMoney(row.estimatedProfit)}

@@ -3,6 +3,7 @@ import { toQueryString } from "@/lib/queryParams";
 import type {
   Customer,
   CustomerInput,
+  OutstandingItem,
   PaginatedResponse,
 } from "@/types/api";
 
@@ -15,11 +16,27 @@ export interface ListCustomersParams {
   limit?: number;
 }
 
+export interface ListOutstandingParams {
+  branchId?: string;
+  search?: string;
+  page?: number;
+  limit?: number;
+}
+
 export async function listCustomers(
   params: ListCustomersParams = {},
 ): Promise<PaginatedResponse<Customer>> {
   const { data } = await axiosClient.get<PaginatedResponse<Customer>>(
     `/api/customers${toQueryString(params)}`,
+  );
+  return data;
+}
+
+export async function listOutstandingCustomers(
+  params: ListOutstandingParams = {},
+): Promise<PaginatedResponse<OutstandingItem>> {
+  const { data } = await axiosClient.get<PaginatedResponse<OutstandingItem>>(
+    `/api/customers/outstanding${toQueryString(params)}`,
   );
   return data;
 }

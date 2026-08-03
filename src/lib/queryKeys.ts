@@ -35,6 +35,8 @@ export const queryKeys = {
     list: (params: ListCustomersParams) =>
       [...queryKeys.customers.all, "list", params] as const,
     detail: (id: string) => [...queryKeys.customers.all, "detail", id] as const,
+    outstanding: (params: object) =>
+      [...queryKeys.customers.all, "outstanding", params] as const,
   },
   stock: {
     all: ["inventory-balance"] as const,
@@ -69,5 +71,20 @@ export const queryKeys = {
   settings: {
     all: ["settings"] as const,
     store: () => [...queryKeys.settings.all, "store"] as const,
+  },
+  managedUsers: {
+    all: ["super-admin", "users"] as const,
+    list: () => [...queryKeys.managedUsers.all, "list"] as const,
+    detail: (userId: string) =>
+      [...queryKeys.managedUsers.all, userId] as const,
+    sessions: (userId: string) =>
+      [...queryKeys.managedUsers.all, userId, "sessions"] as const,
+  },
+  managedBranches: {
+    all: ["super-admin", "branches"] as const,
+    list: () => [...queryKeys.managedBranches.all, "list"] as const,
+  },
+  branches: {
+    accessible: () => ["branches", "accessible"] as const,
   },
 } as const;

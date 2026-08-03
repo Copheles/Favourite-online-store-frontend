@@ -1,9 +1,9 @@
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { posModules } from "@/constants/posModules";
 import { ModuleTile } from "@/components/dashboard/ModuleTile";
 import { useAuth } from "@/hooks/useAuth";
 import { usePrefetchCurrentOrders, useCurrentOrderCount } from "@/hooks/useOrders";
+import { getVisiblePosModules } from "@/lib/accessControl";
 
 export function DashboardPage() {
   const { user } = useAuth();
@@ -15,7 +15,9 @@ export function DashboardPage() {
     prefetchCurrentOrders();
   }, [prefetchCurrentOrders]);
 
-  const modules = posModules.map((module) =>
+  const visibleModules = getVisiblePosModules(user?.role);
+
+  const modules = visibleModules.map((module) =>
     module.id === "currentOrder" && currentOrderCountQuery.data
       ? { ...module, badge: currentOrderCountQuery.data }
       : module,

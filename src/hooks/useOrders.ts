@@ -1,16 +1,29 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+  addOrderPayment,
   getOrder,
   getOrderReceipt,
   listOrders,
   updateOrderStatus,
   type ListOrdersParams,
 } from "@/apis/order.api";
-import type { OrderStatus } from "@/types/api";
+import type { AddOrderPaymentInput, OrderStatus } from "@/types/api";
 import { STALE_TIME } from "@/lib/queryConfig";
 import { queryKeys } from "@/lib/queryKeys";
 import { useAuth } from "@/hooks/useAuth";
 import { useBranch } from "@/hooks/useBranch";
+
+function invalidateOrderSideEffects(
+  queryClient: ReturnType<typeof useQueryClient>,
+) {
+  queryClient.invalidateQueries({ queryKey: queryKeys.orders.all });
+  queryClient.invalidateQueries({ queryKey: queryKeys.customers.all });
+  queryClient.invalidateQueries({ queryKey: queryKeys.pos.all });
+  queryClient.invalidateQueries({ queryKey: queryKeys.stock.all });
+  queryClient.invalidateQueries({ queryKey: ["stock-movements"] });
+  queryClient.invalidateQueries({ queryKey: queryKeys.products.all });
+  queryClient.invalidateQueries({ queryKey: queryKeys.reports.all });
+}
 
 export function useOrders(params: Omit<ListOrdersParams, "branchId"> = {}) {
   const { isAuthenticated } = useAuth();
@@ -53,14 +66,21 @@ export function useUpdateOrderStatus() {
       id: string;
       status: Extract<OrderStatus, "COMPLETED" | "CANCELLED">;
     }) => updateOrderStatus(id, status),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.orders.all });
-      queryClient.invalidateQueries({ queryKey: queryKeys.pos.all });
-      queryClient.invalidateQueries({ queryKey: queryKeys.stock.all });
-      queryClient.invalidateQueries({ queryKey: ["stock-movements"] });
-      queryClient.invalidateQueries({ queryKey: queryKeys.products.all });
-      queryClient.invalidateQueries({ queryKey: queryKeys.reports.all });
-    },
+    onSuccess: () => invalidateOrderSideEffects(queryClient),
+  });
+}
+
+export function useAddOrderPayment() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      id,
+      input,
+    }: {
+      id: string;
+      input: AddOrderPaymentInput;
+    }) => addOrderPayment(id, input),
+    onSuccess: () => invalidateOrderSideEffects(queryClient),
   });
 }
 

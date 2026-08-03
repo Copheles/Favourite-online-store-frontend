@@ -6,7 +6,7 @@ import { queryKeys } from "@/lib/queryKeys";
 import { loginSuccess } from "@/redux/slices/authSlice";
 import { setBranches } from "@/redux/slices/branchSlice";
 import { useAppDispatch } from "@/redux/hooks";
-import type { LoginCredentials } from "@/types/auth";
+import type { LoginFormValues } from "@/validation/login.validation";
 
 function getRedirectPath(state: unknown, fallback: string) {
   const from = (state as { from?: { pathname?: string } } | null)?.from
@@ -21,21 +21,22 @@ export function useLogin() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (credentials: LoginCredentials) => login(credentials),
+    mutationFn: (values: LoginFormValues) =>
+      login({ username: values.username, password: values.password }),
     onSuccess: async (data) => {
       suppressUnauthorizedEvents(10_000);
       dispatch(loginSuccess(data.user));
-      
-      // Fetch and set branch information
+
       try {
         const branchData = await getAccessibleBranches();
         dispatch(setBranches(branchData));
       } catch (error) {
         console.error("Failed to fetch branch information:", error);
       }
-      
+
       queryClient.resetQueries({ queryKey: queryKeys.auth.me(), exact: true });
       queryClient.setQueryData(queryKeys.auth.me(), data.user);
+
       navigate(getRedirectPath(location.state, "/dashboard"));
     },
   });

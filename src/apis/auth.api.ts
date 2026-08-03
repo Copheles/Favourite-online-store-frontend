@@ -1,8 +1,14 @@
 import { axiosClient } from "@/lib/axios";
+import { getDeviceId } from "@/lib/deviceId";
 import type { LoginCredentials, LoginResponse, AuthUser, BranchAccessResponse } from "@/types/auth";
 
-export async function login(credentials: LoginCredentials): Promise<LoginResponse> {
-  const { data } = await axiosClient.post<LoginResponse>("/auth/login", credentials);
+export async function login(
+  credentials: Omit<LoginCredentials, "deviceId">,
+): Promise<LoginResponse> {
+  const { data } = await axiosClient.post<LoginResponse>("/auth/login", {
+    ...credentials,
+    deviceId: getDeviceId(),
+  });
   return data;
 }
 

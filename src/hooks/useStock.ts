@@ -44,15 +44,26 @@ export function useStockMovements(params: Omit<ListStockMovementsParams, "branch
 
 export function useStockMovementMutation() {
   const queryClient = useQueryClient();
-  const { currentBranchId } = useBranch();
+  const { currentBranchId, switchBranch } = useBranch();
   return useMutation({
     mutationFn: (input: CreateStockMovementInput) =>
       createStockMovement({ ...input, branchId: input.branchId ?? currentBranchId }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.stock.all });
-      queryClient.invalidateQueries({ queryKey: ["stock-movements"] });
-      queryClient.invalidateQueries({ queryKey: queryKeys.pos.all });
-      queryClient.invalidateQueries({ queryKey: queryKeys.products.all });
+    onSuccess: (_data, variables) => {
+      const restockedBranchId = variables.branchId ?? currentBranchId;
+      if (restockedBranchId && restockedBranchId !== currentBranchId) {
+        switchBranch(restockedBranchId);
+      }
+      const invalidate = () => {
+        queryClient.invalidateQueries({ queryKey: queryKeys.stock.all });
+        queryClient.invalidateQueries({ queryKey: ["stock-movements"] });
+        queryClient.invalidateQueries({ queryKey: queryKeys.pos.all });
+        queryClient.invalidateQueries({ queryKey: queryKeys.products.all });
+      };
+      if (restockedBranchId && restockedBranchId !== currentBranchId) {
+        window.setTimeout(invalidate, 0);
+      } else {
+        invalidate();
+      }
     },
   });
 }

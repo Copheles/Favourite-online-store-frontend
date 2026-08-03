@@ -3,54 +3,38 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useTranslation } from "react-i18next";
 import {
-  ChevronDown,
   Layers,
-  Loader2,
   Minus,
-  PackagePlus,
   PauseCircle,
   Pencil,
   Plus,
-  RotateCcw,
   ShoppingCart,
   Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Select } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { Form } from "@/components/ui/form";
 import { PosModal } from "@/components/shared/pos/PosModal";
 import { RestockModal } from "@/components/shared/pos/RestockModal";
 import { OrderStatusBadge } from "@/components/shared/pos/OrderStatusBadge";
-import { ApiErrorAlert } from "@/components/forms/ApiErrorAlert";
-import { FormCustomerCombobox } from "@/components/forms/FormCustomerCombobox";
-import { FormSelect } from "@/components/forms/FormSelect";
-import { FormTextField } from "@/components/forms/FormTextField";
-import { FormTextareaField } from "@/components/forms/FormTextareaField";
-import { CardGridSkeleton } from "@/components/shared/pos/TableSkeleton";
+import { ReceiptTicket } from "@/components/receipt/ReceiptTicket";
 import {
-  EmptyState,
-  ErrorState,
   LoadingState,
   PageHeader,
 } from "@/components/shared/PageStates";
 import { PosPageShell } from "@/components/shared/pos/PosPageShell";
-import { PosFilterTabs } from "@/components/shared/pos/PosFilterTabs";
-import { PosSearchBar } from "@/components/shared/pos/PosSearchBar";
+import {
+  SaleCheckoutPanel,
+  SaleMobileCartBar,
+} from "@/components/shared/pos/SaleCheckoutPanel";
+import { SaleProductGrid } from "@/components/shared/pos/SaleProductGrid";
 import { PosToaster, usePosToast } from "@/components/shared/pos/PosToast";
-import { useAppliedSearch } from "@/hooks/useAppliedSearch";
 import { useBranch } from "@/hooks/useBranch";
+import { useAuth } from "@/hooks/useAuth";
 import { useSaleCartResize } from "@/hooks/useSaleCartResize";
-import { useUrlEnumParam, useUrlLimit, useUrlPage, useUrlStringParam, useUrlQueryUpdater } from "@/hooks/useUrlQuery";
-import { useCategories } from "@/hooks/useAdmin";
 import { getCustomer } from "@/apis/customer.api";
 import { useOrderReceipt } from "@/hooks/useOrders";
+import { useCheckout } from "@/hooks/usePos";
 import {
-  useCheckout,
-  usePosProducts,
-} from "@/hooks/usePos";
-import {
-  calcCartSubtotal,
   calcNetTotal,
   getLineDiscount,
   getLineFinalPrice,
@@ -59,13 +43,6 @@ import {
 } from "@/lib/cart";
 import { formatDateTime, formatMoney, toMoney, todayISO } from "@/lib/format";
 import { getOrderNetTotal } from "@/lib/order";
-import {
-  STOCK_STATUS_FILTERS,
-  stockStatusToApi,
-  type StockStatusFilter,
-} from "@/lib/listFilters";
-import { PAGE_SIZE, PAGE_SIZE_OPTIONS } from "@/lib/queryConfig";
-import { resetUrlPage, writeUrlString } from "@/lib/urlQuery";
 import {
   clearPersistedCart,
   createDraftId,
@@ -85,23 +62,12 @@ import {
 } from "@/validation/checkout.validation";
 import { cn } from "@/lib/utils";
 
-const PAYMENT_OPTIONS = [
-  { value: "CASH", label: "CASH" },
-  { value: "KBZPAY", label: "KBZPAY" },
-  { value: "WAVEPAY", label: "WAVEPAY" },
-  { value: "CARD", label: "CARD" },
-  { value: "BANKING", label: "BANKING" },
-];
-
-const saleCheckoutControlClass =
-  "h-8 text-xs lg:h-8 lg:text-xs xl:h-9 xl:text-sm";
-const saleCheckoutLabelClass = "text-[11px] xl:text-xs";
-const saleCheckoutTextareaClass =
-  "min-h-[3.5rem] resize-none text-xs xl:min-h-[4.5rem] xl:text-sm";
+const CART_PERSIST_DEBOUNCE_MS = 200;
 
 export function SalePage() {
   const { t } = useTranslation();
   const { canRestock, currentBranchId } = useBranch();
+  const { canWrite } = useAuth();
   const { toasts, showToast, dismiss } = usePosToast();
   const {
     saleLayoutRef,
@@ -119,16 +85,6 @@ export function SalePage() {
     startListResize,
     startWidthResize,
   } = useSaleCartResize();
-  const {
-    searchInput,
-    setSearchInput,
-    appliedSearch,
-    submitSearch,
-    resetSearch,
-  } = useAppliedSearch();
-  const updateUrl = useUrlQueryUpdater();
-  const [topCategoryId] = useUrlStringParam("top");
-  const [subCategoryId, setSubCategoryId] = useUrlStringParam("sub");
   const [cart, setCart] = useState<CartLine[]>(() => loadPersistedCart());
   const cartRef = useRef(cart);
   cartRef.current = cart;
@@ -137,49 +93,16 @@ export function SalePage() {
   const [draftsOpen, setDraftsOpen] = useState(false);
   const [restockOpen, setRestockOpen] = useState(false);
   const [mobileView, setMobileView] = useState<"products" | "cart">("products");
-  const [productPage, setProductPage] = useUrlPage();
-  const [productLimit, setProductLimit] = useUrlLimit(
-    PAGE_SIZE.saleProducts,
-    PAGE_SIZE_OPTIONS.saleProducts,
-  );
-  const [stockFilter, setStockFilter] = useUrlEnumParam<StockStatusFilter>(
-    "stock",
-    "ALL",
-    STOCK_STATUS_FILTERS,
-  );
-  const [allProducts, setAllProducts] = useState<PosProduct[]>([]);
   const [completedOrder, setCompletedOrder] = useState<OrderDetail | null>(
     null,
   );
   const [selectedCustomerName, setSelectedCustomerName] = useState("");
 
-  const topCategoriesQuery = useCategories("TOP");
-  const subCategoriesQuery = useCategories("SUB");
-
-  const topCategoryOptions = useMemo(
-    () => topCategoriesQuery.data?.items ?? [],
-    [topCategoriesQuery.data?.items],
-  );
-
-  const subCategoryOptions = useMemo(() => {
-    const items = subCategoriesQuery.data?.items ?? [];
-    if (!topCategoryId) return items;
-    return items.filter((category) => category.parentId === topCategoryId);
-  }, [subCategoriesQuery.data?.items, topCategoryId]);
-
   useEffect(() => {
-    if (
-      subCategoryId &&
-      !subCategoryOptions.some((category) => category.id === subCategoryId)
-    ) {
-      updateUrl((params) => {
-        params.delete("sub");
-      }, { resetPage: false });
-    }
-  }, [subCategoryId, subCategoryOptions, updateUrl]);
-
-  useEffect(() => {
-    persistCart(cart);
+    const timer = window.setTimeout(() => {
+      persistCart(cart);
+    }, CART_PERSIST_DEBOUNCE_MS);
+    return () => window.clearTimeout(timer);
   }, [cart]);
 
   useEffect(() => {
@@ -199,58 +122,7 @@ export function SalePage() {
     };
   }, [t, showToast]);
 
-  const hasCategoryFilters = Boolean(topCategoryId || subCategoryId);
-
-  function resetCategoryFilters() {
-    updateUrl((params) => {
-      params.delete("top");
-      params.delete("sub");
-      resetUrlPage(params);
-    });
-    setAllProducts([]);
-  }
-
-  const productQueryParams = useMemo(
-    () => ({
-      search: appliedSearch || undefined,
-      topCategoryId: topCategoryId || undefined,
-      subCategoryId: subCategoryId || undefined,
-      stockStatus: stockStatusToApi(stockFilter),
-      page: productPage,
-      limit: productLimit,
-    }),
-    [
-      appliedSearch,
-      topCategoryId,
-      subCategoryId,
-      stockFilter,
-      productPage,
-      productLimit,
-    ],
-  );
-
-  const productQuery = usePosProducts(productQueryParams, { keepPrevious: false });
-
-  useEffect(() => {
-    setAllProducts([]);
-  }, [appliedSearch, topCategoryId, subCategoryId, stockFilter, productLimit]);
-
-  useEffect(() => {
-    if (!productQuery.data || productQuery.isFetching) return;
-    setAllProducts((prev) => {
-      if (productPage === 1) return productQuery.data.items;
-      const existingIds = new Set(prev.map((p) => p.productId));
-      const next = productQuery.data.items.filter(
-        (p) => !existingIds.has(p.productId),
-      );
-      return [...prev, ...next];
-    });
-  }, [productQuery.data, productQuery.isFetching, productPage]);
-
   const checkoutMutation = useCheckout();
-
-  const subtotal = useMemo(() => calcCartSubtotal(cart), [cart]);
-
   const checkoutSchema = useMemo(() => getCheckoutSchema(t), [t]);
 
   const form = useForm<CheckoutFormValues>({
@@ -267,40 +139,12 @@ export function SalePage() {
     },
   });
 
-  const orderDiscount = form.watch("orderDiscount");
-  const deliveryFee = form.watch("deliveryFee");
-  const paymentType = form.watch("paymentType");
-  const paidAmount = form.watch("paidAmount");
-  const orderDate = form.watch("orderDate");
-  const isFutureOrderDate = Boolean(orderDate && orderDate > todayISO());
-
-  useEffect(() => {
-    if (isFutureOrderDate && form.getValues("status") !== "COMPLETED") {
-      form.setValue("status", "COMPLETED", { shouldValidate: true });
-    }
-  }, [isFutureOrderDate, form]);
-
-  const netTotal = useMemo(
-    () =>
-      calcNetTotal(
-        cart,
-        Number(orderDiscount) || 0,
-        Number(deliveryFee) || 0,
-      ),
-    [cart, orderDiscount, deliveryFee],
-  );
-
-  const effectivePaid = paidAmount > 0 ? paidAmount : netTotal;
-  const changeAmount = Math.max(effectivePaid - netTotal, 0);
-
-  useEffect(() => {
-    if (paymentType === "CASH" && netTotal > 0) {
-      form.setValue("paidAmount", toMoney(netTotal), { shouldValidate: true });
-    }
-  }, [netTotal, paymentType, form]);
-
   const addProductToCart = useCallback(
     (product: PosProduct) => {
+      if (!canWrite) {
+        showToast("info", t("pos.sale.readOnlyCheckout"));
+        return;
+      }
       const { lines, result } = tryAddToCart(cartRef.current, product);
       cartRef.current = lines;
       setCart(lines);
@@ -310,14 +154,20 @@ export function SalePage() {
           "warning",
           t("pos.sale.maxStockReached", { name: product.name }),
         );
-      } else if (result === "added") {
-        showToast(
-          "success",
-          t("pos.sale.addedToCart", { name: product.name }),
-        );
       }
     },
-    [t, showToast],
+    [canWrite, t, showToast],
+  );
+
+  const handleRestockOpen = useCallback(() => {
+    setRestockOpen(true);
+  }, []);
+
+  const handleCustomerChange = useCallback(
+    (customer: { name: string } | undefined) => {
+      setSelectedCustomerName(customer?.name ?? "");
+    },
+    [],
   );
 
   function updateQty(productId: string, delta: number) {
@@ -391,7 +241,9 @@ export function SalePage() {
     const label =
       values.customerId && selectedCustomerName.trim()
         ? selectedCustomerName.trim()
-        : t("pos.sale.draftLabel", { time: formatDateTime(new Date().toISOString()) });
+        : t("pos.sale.draftLabel", {
+            time: formatDateTime(new Date().toISOString()),
+          });
     return {
       id: createDraftId(),
       label,
@@ -481,13 +333,28 @@ export function SalePage() {
   function onCheckout(values: CheckoutFormValues) {
     if (cart.length === 0) return;
 
-    const paidError = validatePaidAmount(values.paidAmount, netTotal, t);
+    const netTotal = calcNetTotal(
+      cart,
+      values.orderDiscount || 0,
+      values.deliveryFee || 0,
+    );
+    const paidError = validatePaidAmount(
+      values.paidAmount,
+      netTotal,
+      values.customerId,
+      t,
+    );
     if (paidError) {
-      form.setError("paidAmount", { type: "manual", message: paidError });
+      form.setError(values.customerId ? "paidAmount" : "customerId", {
+        type: "manual",
+        message: paidError,
+      });
       return;
     }
 
-    const paid = values.paidAmount > 0 ? values.paidAmount : netTotal;
+    const isFutureOrderDate = Boolean(
+      values.orderDate && values.orderDate > todayISO(),
+    );
     checkoutMutation.mutate(
       {
         customerId: values.customerId || null,
@@ -499,7 +366,7 @@ export function SalePage() {
         })),
         status: isFutureOrderDate ? "COMPLETED" : values.status,
         paymentType: values.paymentType,
-        paidAmount: paid,
+        paidAmount: values.paidAmount,
         orderDiscount: values.orderDiscount || 0,
         deliveryFee: values.deliveryFee || 0,
         orderDate: values.orderDate || todayISO(),
@@ -535,619 +402,309 @@ export function SalePage() {
     );
   }
 
-  const statusOptions = [
-    { value: "COMPLETED", label: t("pos.sale.statusCompleted") },
-    { value: "PROCESSING", label: t("pos.sale.statusProcessing") },
-  ];
-
-  const totalProductPages = productQuery.data?.meta.totalPages ?? 1;
-  const hasMoreProducts = productPage < totalProductPages;
-  const totalProducts = productQuery.data?.meta.total ?? 0;
-
   return (
     <>
-    <PosPageShell
-      ref={saleLayoutRef}
-      fullHeight
-      className="flex h-full min-h-0 flex-col overflow-hidden lg:flex-row"
-    >
-      <div className="flex shrink-0 gap-1 border-b border-border bg-card p-2 lg:hidden">
-        <button
-          type="button"
-          onClick={() => setMobileView("products")}
-          className={cn(
-            "flex-1 rounded-lg px-3 py-2 text-sm font-semibold transition-colors",
-            mobileView === "products"
-              ? "bg-primary text-primary-foreground shadow-sm"
-              : "text-muted-foreground hover:bg-muted",
-          )}
-        >
-          {t("pos.sale.tabProducts")}
-        </button>
-        <button
-          type="button"
-          onClick={() => setMobileView("cart")}
-          className={cn(
-            "flex flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold transition-colors",
-            mobileView === "cart"
-              ? "bg-primary text-primary-foreground shadow-sm"
-              : "text-muted-foreground hover:bg-muted",
-          )}
-        >
-          {t("pos.sale.cart")}
-          {cartItemCount > 0 && (
-            <span
-              className={cn(
-                "inline-flex min-w-4 items-center justify-center rounded-full px-1 text-[11px] font-semibold leading-none",
-                mobileView === "cart"
-                  ? "bg-primary-foreground/20 text-primary-foreground"
-                  : "bg-primary text-primary-foreground",
-              )}
-            >
-              {cartItemCount}
-            </span>
-          )}
-        </button>
-      </div>
-
-      <div
-        ref={cartColumnRef}
-        className={cn(
-          "min-h-0 w-full flex-col overflow-hidden border-b border-border bg-card lg:h-full lg:w-[var(--sale-cart-width)] lg:max-w-[var(--sale-cart-width)] lg:basis-[var(--sale-cart-width)] lg:shrink-0 lg:flex-col lg:border-b-0 lg:border-r",
-          mobileView === "cart" ? "flex max-lg:flex-1" : "hidden lg:flex",
-        )}
-        style={
-          {
-            "--sale-cart-width":
-              cartWidthPx > 0 ? `${cartWidthPx}px` : `${Math.round(widthRatio * 100)}%`,
-          } as React.CSSProperties
-        }
+      <PosPageShell
+        ref={saleLayoutRef}
+        fullHeight
+        className="flex h-full min-h-0 flex-col overflow-hidden lg:flex-row"
       >
+        <div className="flex shrink-0 gap-1 border-b border-border bg-card p-2 lg:hidden">
+          <button
+            type="button"
+            onClick={() => setMobileView("products")}
+            className={cn(
+              "flex-1 rounded-lg px-3 py-2 text-sm font-semibold transition-colors",
+              mobileView === "products"
+                ? "bg-primary text-primary-foreground shadow-sm"
+                : "text-muted-foreground hover:bg-muted",
+            )}
+          >
+            {t("pos.sale.tabProducts")}
+          </button>
+          <button
+            type="button"
+            onClick={() => setMobileView("cart")}
+            className={cn(
+              "flex flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold transition-colors",
+              mobileView === "cart"
+                ? "bg-primary text-primary-foreground shadow-sm"
+                : "text-muted-foreground hover:bg-muted",
+            )}
+          >
+            {t("pos.sale.cart")}
+            {cartItemCount > 0 && (
+              <span
+                className={cn(
+                  "inline-flex min-w-4 items-center justify-center rounded-full px-1 text-[11px] font-semibold leading-none",
+                  mobileView === "cart"
+                    ? "bg-primary-foreground/20 text-primary-foreground"
+                    : "bg-primary text-primary-foreground",
+                )}
+              >
+                {cartItemCount}
+              </span>
+            )}
+          </button>
+        </div>
+
         <div
-          ref={cartHeaderRef}
-          className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-b border-border/60 px-4 py-2.5 sm:px-5"
+          ref={cartColumnRef}
+          className={cn(
+            "min-h-0 w-full flex-col overflow-hidden border-b border-border bg-card lg:h-full lg:w-[var(--sale-cart-width)] lg:max-w-[var(--sale-cart-width)] lg:basis-[var(--sale-cart-width)] lg:shrink-0 lg:flex-col lg:border-b-0 lg:border-r",
+            mobileView === "cart" ? "flex max-lg:flex-1" : "hidden lg:flex",
+          )}
+          style={
+            {
+              "--sale-cart-width":
+                cartWidthPx > 0
+                  ? `${cartWidthPx}px`
+                  : `${Math.round(widthRatio * 100)}%`,
+            } as React.CSSProperties
+          }
         >
-          <p className="min-w-0 truncate text-sm">
-            <span className="font-medium text-foreground">{t("pos.sale.cart")}</span>
-            <span className="text-muted-foreground">
-              {" "}
-              · {t("pos.sale.cartItems", { count: cartItemCount })}
-            </span>
-          </p>
+          <div
+            ref={cartHeaderRef}
+            className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-b border-border/60 px-4 py-2.5 sm:px-5"
+          >
+            <p className="min-w-0 truncate text-sm">
+              <span className="font-medium text-foreground">
+                {t("pos.sale.cart")}
+              </span>
+              <span className="text-muted-foreground">
+                {" "}
+                · {t("pos.sale.cartItems", { count: cartItemCount })}
+              </span>
+            </p>
 
-          <div className="flex shrink-0 items-center gap-1.5">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="h-8 gap-1.5"
-              onClick={() => setDraftsOpen(true)}
-            >
-              <Layers className="size-3.5" />
-              {t("pos.sale.drafts")}
-              {drafts.length > 0 && (
-                <span className="ml-0.5 inline-flex min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[11px] font-semibold leading-none text-primary-foreground">
-                  {drafts.length}
-                </span>
-              )}
-            </Button>
-
-            {cart.length > 0 && (
+            <div className="flex shrink-0 items-center gap-1.5">
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
                 className="h-8 gap-1.5"
-                onClick={handleHoldOrder}
+                onClick={() => setDraftsOpen(true)}
               >
-                <PauseCircle className="size-3.5" />
-                {t("pos.sale.hold")}
+                <Layers className="size-3.5" />
+                {t("pos.sale.drafts")}
+                {drafts.length > 0 && (
+                  <span className="ml-0.5 inline-flex min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[11px] font-semibold leading-none text-primary-foreground">
+                    {drafts.length}
+                  </span>
+                )}
               </Button>
-            )}
 
-            {cart.length > 0 && (
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="h-8 gap-1.5 border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive"
-                onClick={handleClearCart}
-              >
-                <Trash2 className="size-3.5" />
-                {t("pos.sale.clearCart")}
-              </Button>
-            )}
+              {cart.length > 0 && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-8 gap-1.5"
+                  onClick={handleHoldOrder}
+                >
+                  <PauseCircle className="size-3.5" />
+                  {t("pos.sale.hold")}
+                </Button>
+              )}
+
+              {cart.length > 0 && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-8 gap-1.5 border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                  onClick={handleClearCart}
+                >
+                  <Trash2 className="size-3.5" />
+                  {t("pos.sale.clearCart")}
+                </Button>
+              )}
+            </div>
           </div>
-        </div>
 
-        <div
-          ref={cartListRef}
-          className={cn(
-            "flex shrink-0 flex-col overflow-hidden px-4 py-3 sm:px-5",
-            listHeightPx <= 0 && "min-h-0 flex-[0.58]",
-          )}
-          style={listHeightPx > 0 ? { height: listHeightPx } : undefined}
-        >
-          <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-border/70 bg-card">
-            {cart.length === 0 ? (
-              <SaleCartEmpty />
-            ) : (
-              <>
-              <div
-                className="grid shrink-0 grid-cols-[minmax(0,1fr)_88px_72px_32px] items-center gap-2 border-b border-border/70 bg-muted/50 px-3 py-2.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground sm:grid-cols-[minmax(0,1fr)_96px_80px_36px] sm:px-3.5"
-                role="row"
-              >
-                <span>{t("pos.stock.product")}</span>
-                <span className="text-center">{t("pos.stock.qty")}</span>
-                <span className="text-right">{t("pos.sale.total")}</span>
-                <span className="sr-only">{t("pos.common.delete")}</span>
-              </div>
-
-              <div className="min-h-0 flex-1 overflow-y-auto">
-                {cart.map((line) => (
+          <div
+            ref={cartListRef}
+            className={cn(
+              "flex shrink-0 flex-col overflow-hidden px-4 py-3 sm:px-5",
+              listHeightPx <= 0 && "min-h-0 flex-[0.58]",
+            )}
+            style={listHeightPx > 0 ? { height: listHeightPx } : undefined}
+          >
+            <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-border/70 bg-card">
+              {cart.length === 0 ? (
+                <SaleCartEmpty />
+              ) : (
+                <>
                   <div
-                    key={line.product.productId}
-                    className="grid grid-cols-[minmax(0,1fr)_88px_72px_32px] items-center gap-2 border-b border-border/50 px-3 py-3 last:border-b-0 sm:grid-cols-[minmax(0,1fr)_96px_80px_36px] sm:px-3.5"
+                    className="grid shrink-0 grid-cols-[minmax(0,1fr)_88px_72px_32px] items-center gap-2 border-b border-border/70 bg-muted/50 px-3 py-2.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground sm:grid-cols-[minmax(0,1fr)_96px_80px_36px] sm:px-3.5"
+                    role="row"
                   >
-                    <button
-                      type="button"
-                      onClick={() => setEditingProductId(line.product.productId)}
-                      className="group flex min-w-0 items-center gap-1.5 rounded-md py-0.5 pr-1 text-left transition-colors hover:text-primary"
-                      title={t("pos.sale.editItem")}
-                    >
-                      <span className="min-w-0">
-                        <span className="flex items-center gap-1">
-                          <span className="truncate text-sm font-medium text-foreground group-hover:text-primary">
-                            {line.product.name}
-                          </span>
-                          <Pencil className="size-3 shrink-0 text-muted-foreground/60 group-hover:text-primary" />
-                        </span>
-                        <span className="mt-0.5 flex items-center gap-1.5 text-xs tabular-nums text-muted-foreground">
-                          {formatMoney(getLineFinalPrice(line))}
-                          {getLineDiscount(line) > 0 && (
-                            <span className="text-[11px] text-muted-foreground/70 line-through">
-                              {formatMoney(getUnitPrice(line))}
-                            </span>
-                          )}
-                        </span>
-                      </span>
-                    </button>
-
-                    <div className="flex items-center justify-center gap-0.5">
-                      <Button
-                        type="button"
-                        size="icon"
-                        variant="outline"
-                        className="size-7 rounded-md"
-                        onClick={() => updateQty(line.product.productId, -1)}
-                      >
-                        <Minus className="size-3" />
-                      </Button>
-                      <span className="min-w-7 text-center text-sm font-semibold tabular-nums">
-                        {line.quantity}
-                      </span>
-                      <Button
-                        type="button"
-                        size="icon"
-                        variant="outline"
-                        className="size-7 rounded-md"
-                        onClick={() => updateQty(line.product.productId, 1)}
-                      >
-                        <Plus className="size-3" />
-                      </Button>
-                    </div>
-
-                    <p className="text-right text-sm font-semibold tabular-nums">
-                      {formatMoney(getLineFinalPrice(line) * line.quantity)}
-                    </p>
-
-                    <div className="flex justify-end">
-                      <Button
-                        type="button"
-                        size="icon"
-                        variant="ghost"
-                        className="size-8 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
-                        onClick={() => removeLine(line.product.productId)}
-                      >
-                        <Trash2 className="size-3.5" />
-                      </Button>
-                    </div>
+                    <span>{t("pos.stock.product")}</span>
+                    <span className="text-center">{t("pos.stock.qty")}</span>
+                    <span className="text-right">{t("pos.sale.total")}</span>
+                    <span className="sr-only">{t("pos.common.delete")}</span>
                   </div>
-                ))}
-              </div>
-              </>
-            )}
+
+                  <div className="min-h-0 flex-1 overflow-y-auto">
+                    {cart.map((line) => (
+                      <div
+                        key={line.product.productId}
+                        className="grid grid-cols-[minmax(0,1fr)_88px_72px_32px] items-center gap-2 border-b border-border/50 px-3 py-3 last:border-b-0 sm:grid-cols-[minmax(0,1fr)_96px_80px_36px] sm:px-3.5"
+                      >
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setEditingProductId(line.product.productId)
+                          }
+                          className="group flex min-w-0 items-center gap-1.5 rounded-md py-0.5 pr-1 text-left transition-colors hover:text-primary"
+                          title={t("pos.sale.editItem")}
+                        >
+                          <span className="min-w-0">
+                            <span className="flex items-center gap-1">
+                              <span className="truncate text-sm font-medium text-foreground group-hover:text-primary">
+                                {line.product.name}
+                              </span>
+                              <Pencil className="size-3 shrink-0 text-muted-foreground/60 group-hover:text-primary" />
+                            </span>
+                            <span className="mt-0.5 flex items-center gap-1.5 text-xs tabular-nums text-muted-foreground">
+                              {formatMoney(getLineFinalPrice(line))}
+                              {getLineDiscount(line) > 0 && (
+                                <span className="text-[11px] text-muted-foreground/70 line-through">
+                                  {formatMoney(getUnitPrice(line))}
+                                </span>
+                              )}
+                            </span>
+                          </span>
+                        </button>
+
+                        <div className="flex items-center justify-center gap-0.5">
+                          <Button
+                            type="button"
+                            size="icon"
+                            variant="outline"
+                            className="size-7 rounded-md"
+                            onClick={() =>
+                              updateQty(line.product.productId, -1)
+                            }
+                          >
+                            <Minus className="size-3" />
+                          </Button>
+                          <span className="min-w-7 text-center text-sm font-semibold tabular-nums">
+                            {line.quantity}
+                          </span>
+                          <Button
+                            type="button"
+                            size="icon"
+                            variant="outline"
+                            className="size-7 rounded-md"
+                            onClick={() =>
+                              updateQty(line.product.productId, 1)
+                            }
+                          >
+                            <Plus className="size-3" />
+                          </Button>
+                        </div>
+
+                        <p className="text-right text-sm font-semibold tabular-nums">
+                          {formatMoney(getLineFinalPrice(line) * line.quantity)}
+                        </p>
+
+                        <div className="flex justify-end">
+                          <Button
+                            type="button"
+                            size="icon"
+                            variant="ghost"
+                            className="size-8 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                            onClick={() => removeLine(line.product.productId)}
+                          >
+                            <Trash2 className="size-3.5" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
           </div>
+
+          <div
+            role="separator"
+            aria-orientation="horizontal"
+            aria-valuemin={Math.round(minListRatio * 100)}
+            aria-valuemax={Math.round(maxListRatio * 100)}
+            aria-valuenow={Math.round(listRatio * 100)}
+            aria-label={t("pos.sale.resizeCartList")}
+            onPointerDown={startListResize}
+            className="group flex h-2.5 shrink-0 cursor-ns-resize touch-none select-none items-center justify-center border-y border-border/60 bg-muted/20 hover:bg-muted/40 active:bg-muted/50"
+          >
+            <span className="h-1 w-10 rounded-full bg-border transition-colors group-hover:bg-muted-foreground/50" />
+          </div>
+
+          <SaleCheckoutPanel
+            form={form}
+            cart={cart}
+            checkoutMutation={checkoutMutation}
+            onSubmit={onCheckout}
+            onCustomerChange={handleCustomerChange}
+          />
         </div>
 
         <div
           role="separator"
-          aria-orientation="horizontal"
-          aria-valuemin={Math.round(minListRatio * 100)}
-          aria-valuemax={Math.round(maxListRatio * 100)}
-          aria-valuenow={Math.round(listRatio * 100)}
-          aria-label={t("pos.sale.resizeCartList")}
-          onPointerDown={startListResize}
-          className="group flex h-2.5 shrink-0 cursor-ns-resize touch-none select-none items-center justify-center border-y border-border/60 bg-muted/20 hover:bg-muted/40 active:bg-muted/50"
+          aria-orientation="vertical"
+          aria-valuemin={Math.round(minWidthRatio * 100)}
+          aria-valuemax={Math.round(maxWidthRatio * 100)}
+          aria-valuenow={Math.round(widthRatio * 100)}
+          aria-label={t("pos.sale.resizeCartWidth")}
+          onPointerDown={startWidthResize}
+          className="group hidden h-full w-2.5 shrink-0 cursor-ew-resize touch-none select-none items-center justify-center border-x border-border/60 bg-muted/20 hover:bg-muted/40 active:bg-muted/50 lg:flex"
         >
-          <span className="h-1 w-10 rounded-full bg-border transition-colors group-hover:bg-muted-foreground/50" />
+          <span className="h-10 w-1 rounded-full bg-border transition-colors group-hover:bg-muted-foreground/50" />
         </div>
 
-        <div className="flex min-h-0 flex-1 flex-col overflow-hidden border-t border-border bg-card">
-          <Form {...form}>
-            <form
-              onSubmit={form.handleSubmit(onCheckout)}
-              className="flex min-h-0 flex-1 flex-col"
-            >
-              <div className="min-h-0 flex-1 space-y-2 overflow-y-auto px-4 py-3 sm:px-5 sm:py-4">
-                <div className="grid gap-2 sm:grid-cols-2">
-                  <FormCustomerCombobox
-                    control={form.control}
-                    name="customerId"
-                    label={t("pos.sale.member")}
-                    walkInLabel={t("pos.sale.walkIn")}
-                    labelClassName={saleCheckoutLabelClass}
-                    controlClassName={saleCheckoutControlClass}
-                    onCustomerChange={(customer) =>
-                      setSelectedCustomerName(customer?.name ?? "")
-                    }
-                  />
-                  <FormSelect
-                    control={form.control}
-                    name="paymentType"
-                    label={t("pos.sale.paymentType")}
-                    options={PAYMENT_OPTIONS}
-                    size="sm"
-                    labelClassName={saleCheckoutLabelClass}
-                    controlClassName={saleCheckoutControlClass}
-                  />
-                </div>
+        <SaleProductGrid
+          canRestock={canRestock}
+          onAddProduct={addProductToCart}
+          onRestock={handleRestockOpen}
+          className={
+            mobileView === "products" ? "flex" : "hidden lg:flex"
+          }
+        />
 
-                <div className="grid grid-cols-2 gap-2">
-                  <FormTextField
-                    control={form.control}
-                    name="orderDate"
-                    label={t("pos.sale.orderDate")}
-                    type="date"
-                    min={todayISO()}
-                    labelClassName={saleCheckoutLabelClass}
-                    controlClassName={saleCheckoutControlClass}
-                  />
-                  <FormSelect
-                    control={form.control}
-                    name="status"
-                    label={t("pos.sale.orderStatus")}
-                    options={statusOptions}
-                    size="sm"
-                    disabled={isFutureOrderDate}
-                    labelClassName={saleCheckoutLabelClass}
-                    controlClassName={saleCheckoutControlClass}
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-2">
-                  <FormTextField
-                    control={form.control}
-                    name="paidAmount"
-                    label={t("pos.sale.paidAmount")}
-                    type="number"
-                    min={0}
-                    labelClassName={saleCheckoutLabelClass}
-                    controlClassName={saleCheckoutControlClass}
-                  />
-                  <FormTextField
-                    control={form.control}
-                    name="orderDiscount"
-                    label={t("pos.sale.orderDiscount")}
-                    type="number"
-                    min={0}
-                    labelClassName={saleCheckoutLabelClass}
-                    controlClassName={saleCheckoutControlClass}
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-2">
-                  <FormTextField
-                    control={form.control}
-                    name="deliveryFee"
-                    label={t("pos.sale.deliveryFee")}
-                    type="number"
-                    min={0}
-                    labelClassName={saleCheckoutLabelClass}
-                    controlClassName={saleCheckoutControlClass}
-                  />
-                </div>
-
-                <FormTextareaField
-                  control={form.control}
-                  name="notes"
-                  label={t("pos.sale.orderNotes")}
-                  placeholder={t("pos.sale.orderNotesPlaceholder")}
-                  rows={2}
-                  labelClassName={saleCheckoutLabelClass}
-                  controlClassName={saleCheckoutTextareaClass}
-                />
-
-                <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 rounded-lg border border-border/60 bg-muted/30 px-3 py-2 text-xs xl:text-sm">
-                  <div className="flex items-center gap-3">
-                    <span className="text-muted-foreground">
-                      {t("pos.sale.subtotal")}{" "}
-                      <span className="font-medium text-foreground">
-                        {formatMoney(subtotal)}
-                      </span>
-                    </span>
-                    {Number(orderDiscount) > 0 && (
-                      <span className="text-muted-foreground">
-                        −{formatMoney(Number(orderDiscount) || 0)}
-                      </span>
-                    )}
-                    {Number(deliveryFee) > 0 && (
-                      <span className="text-muted-foreground">
-                        +{formatMoney(Number(deliveryFee) || 0)}
-                      </span>
-                    )}
-                  </div>
-                  {paymentType === "CASH" && changeAmount > 0 && (
-                    <span className="font-medium text-success-foreground">
-                      {t("pos.sale.change")}: {formatMoney(changeAmount)}
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              <div className="shrink-0 space-y-2 border-t border-border bg-card px-4 py-3 sm:px-5">
-                <ApiErrorAlert
-                  error={checkoutMutation.error}
-                  fallback={t("pos.sale.checkoutError")}
-                />
-
-                <Button
-                  type="submit"
-                  className="h-9 w-full text-sm font-semibold xl:h-10"
-                  disabled={cart.length === 0 || checkoutMutation.isPending}
-                >
-                  {checkoutMutation.isPending
-                    ? t("pos.sale.processing")
-                    : `${t("pos.sale.checkout")} · ${formatMoney(netTotal)}`}
-                </Button>
-              </div>
-            </form>
-          </Form>
-        </div>
-      </div>
-
-      <div
-        role="separator"
-        aria-orientation="vertical"
-        aria-valuemin={Math.round(minWidthRatio * 100)}
-        aria-valuemax={Math.round(maxWidthRatio * 100)}
-        aria-valuenow={Math.round(widthRatio * 100)}
-        aria-label={t("pos.sale.resizeCartWidth")}
-        onPointerDown={startWidthResize}
-        className="group hidden h-full w-2.5 shrink-0 cursor-ew-resize touch-none select-none items-center justify-center border-x border-border/60 bg-muted/20 hover:bg-muted/40 active:bg-muted/50 lg:flex"
-      >
-        <span className="h-10 w-1 rounded-full bg-border transition-colors group-hover:bg-muted-foreground/50" />
-      </div>
-
-      <div
-        className={cn(
-          "min-h-0 flex-1 flex-col lg:min-w-0",
-          mobileView === "products" ? "flex" : "hidden lg:flex",
+        {mobileView === "products" && cart.length > 0 && (
+          <SaleMobileCartBar
+            cart={cart}
+            form={form}
+            cartItemCount={cartItemCount}
+            onViewCart={() => setMobileView("cart")}
+          />
         )}
-      >
-        <div className="shrink-0 border-b border-border/80 bg-card px-3 py-2 sm:px-4">
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <PosSearchBar
-                value={searchInput}
-                onChange={setSearchInput}
-                onSubmit={() => {
-                  submitSearch();
-                  setAllProducts([]);
-                }}
-                onClear={() => {
-                  resetSearch();
-                  setAllProducts([]);
-                }}
-                placeholder={t("pos.sale.searchProducts")}
-                className="w-full max-w-none flex-1"
-              />
-              {canRestock && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="h-9 shrink-0 gap-1.5 px-3"
-                  onClick={() => setRestockOpen(true)}
-                  title={t("pos.stock.restock")}
-                >
-                  <PackagePlus className="size-4 shrink-0" />
-                  <span className="hidden sm:inline">{t("pos.stock.restock")}</span>
-                </Button>
-              )}
-            </div>
-
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]">
-              <Select
-                id="sale-top-category"
-                aria-label={t("pos.settings.topCategory")}
-                value={topCategoryId}
-                className="h-9 text-sm"
-                onChange={(e) => {
-                  updateUrl((params) => {
-                    writeUrlString(params, "top", e.target.value);
-                    params.delete("sub");
-                    resetUrlPage(params);
-                  });
-                  setAllProducts([]);
-                }}
-              >
-                <option value="">{t("pos.sale.allCategories")}</option>
-                {topCategoryOptions.map((category) => (
-                  <option key={category.id} value={category.id}>
-                    {category.name}
-                  </option>
-                ))}
-              </Select>
-
-              <Select
-                id="sale-sub-category"
-                aria-label={t("pos.settings.subCategory")}
-                value={subCategoryId}
-                className="h-9 text-sm"
-                onChange={(e) => {
-                  setSubCategoryId(e.target.value);
-                  setAllProducts([]);
-                }}
-                disabled={subCategoryOptions.length === 0}
-              >
-                <option value="">{t("pos.sale.allSubCategories")}</option>
-                {subCategoryOptions.map((category) => (
-                  <option key={category.id} value={category.id}>
-                    {category.name}
-                  </option>
-                ))}
-              </Select>
-
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="h-9 w-full gap-1.5 px-2.5 sm:col-span-2 xl:col-span-1 xl:w-auto"
-                disabled={!hasCategoryFilters}
-                onClick={resetCategoryFilters}
-                title={t("pos.sale.resetCategories")}
-              >
-                <RotateCcw className="size-3.5 shrink-0" />
-                {t("pos.sale.resetCategories")}
-              </Button>
-            </div>
-
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
-              <PosFilterTabs
-                value={stockFilter}
-                options={STOCK_STATUS_FILTERS}
-                onChange={setStockFilter}
-                getLabel={(value) => t(`pos.filters.stock.${value}`)}
-                align="start"
-                className="min-w-0 w-full sm:flex-1"
-              />
-              <div className="flex shrink-0 items-center gap-2 self-stretch sm:self-auto">
-                <span className="whitespace-nowrap text-xs font-medium text-muted-foreground">
-                  {t("pos.common.batchSize")}
-                </span>
-                <Select
-                  aria-label={t("pos.common.batchSize")}
-                  value={String(productLimit)}
-                  onChange={(event) => setProductLimit(Number(event.target.value))}
-                  className="h-9 w-[4.75rem] shrink-0 text-sm"
-                >
-                  {PAGE_SIZE_OPTIONS.saleProducts.map((option) => (
-                    <option key={option} value={option}>
-                      {option}
-                    </option>
-                  ))}
-                </Select>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="min-h-0 flex-1 overflow-y-auto p-3 sm:p-4">
-          {productQuery.isFetching && productPage === 1 && allProducts.length === 0 && (
-            <CardGridSkeleton />
-          )}
-          {productQuery.isError && <ErrorState />}
-          {!productQuery.isFetching && allProducts.length === 0 && (
-            <EmptyState message={t("pos.sale.noProducts")} />
-          )}
-          <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-2 sm:gap-3 md:grid-cols-3 lg:grid-cols-[repeat(auto-fill,minmax(10.5rem,1fr))] xl:grid-cols-[repeat(auto-fill,minmax(12rem,1fr))]">
-            {allProducts.map((product) => (
-              <SaleProductCard
-                key={product.productId}
-                product={product}
-                onAdd={() => addProductToCart(product)}
-              />
-            ))}
-          </div>
-
-          {hasMoreProducts && (
-            <div className="mt-6 flex flex-col items-center gap-2.5 pb-1">
-              {totalProducts > 0 && !productQuery.isFetching && (
-                <p className="text-xs font-medium text-muted-foreground/80">
-                  {t("pos.sale.productsShown", {
-                    shown: allProducts.length,
-                    total: totalProducts,
-                  })}
-                </p>
-              )}
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                disabled={productQuery.isFetching}
-                onClick={() => setProductPage(productPage + 1)}
-                className="h-9 min-w-[9.5rem] rounded-full border-border/70 bg-card px-5 text-sm font-medium shadow-sm hover:bg-muted/40"
-              >
-                {productQuery.isFetching ? (
-                  <>
-                    <Loader2 className="size-3.5 animate-spin" />
-                    {t("pos.common.loading")}
-                  </>
-                ) : (
-                  <>
-                    <ChevronDown className="size-3.5 text-muted-foreground" />
-                    {t("pos.sale.loadMore")}
-                  </>
-                )}
-              </Button>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {mobileView === "products" && cart.length > 0 && (
-        <div className="shrink-0 border-t border-border bg-card p-3 lg:hidden">
-          <Button
-            type="button"
-            className="h-11 w-full justify-between text-sm font-semibold"
-            onClick={() => setMobileView("cart")}
-          >
-            <span className="flex items-center gap-1.5">
-              <ShoppingCart className="size-4" />
-              {t("pos.sale.cartItems", { count: cartItemCount })}
-            </span>
-            <span className="flex items-center gap-1.5">
-              {formatMoney(netTotal)}
-              <span className="opacity-80">· {t("pos.sale.viewCart")}</span>
-            </span>
-          </Button>
-        </div>
+      </PosPageShell>
+      {editingLine && (
+        <CartItemEditModal
+          line={editingLine}
+          onClose={() => setEditingProductId(null)}
+          onSave={(patch) =>
+            handleSaveLineEdit(editingLine.product.productId, patch)
+          }
+        />
       )}
-    </PosPageShell>
-    {editingLine && (
-      <CartItemEditModal
-        line={editingLine}
-        onClose={() => setEditingProductId(null)}
-        onSave={(patch) =>
-          handleSaveLineEdit(editingLine.product.productId, patch)
-        }
-      />
-    )}
-    {draftsOpen && (
-      <DraftsModal
-        drafts={drafts}
-        onClose={() => setDraftsOpen(false)}
-        onResume={handleResumeDraft}
-        onDelete={handleDeleteDraft}
-      />
-    )}
-    {canRestock && restockOpen && (
-      <RestockModal
-        onClose={() => setRestockOpen(false)}
-        onSuccess={() => showToast("success", t("pos.stock.restockSuccess"))}
-      />
-    )}
-    <PosToaster toasts={toasts} onDismiss={dismiss} />
+      {draftsOpen && (
+        <DraftsModal
+          drafts={drafts}
+          onClose={() => setDraftsOpen(false)}
+          onResume={handleResumeDraft}
+          onDelete={handleDeleteDraft}
+        />
+      )}
+      {canRestock && restockOpen && (
+        <RestockModal
+          onClose={() => setRestockOpen(false)}
+          onSuccess={() => showToast("success", t("pos.stock.restockSuccess"))}
+        />
+      )}
+      <PosToaster toasts={toasts} onDismiss={dismiss} />
     </>
   );
 }
@@ -1193,7 +750,8 @@ function CartItemEditModal({
         : null;
 
   const hasError = Boolean(qtyError || priceError || discountError);
-  const lineTotal = Math.max(priceNum - discountNum, 0) * (qtyNum > 0 ? qtyNum : 0);
+  const lineTotal =
+    Math.max(priceNum - discountNum, 0) * (qtyNum > 0 ? qtyNum : 0);
 
   function handleSubmit() {
     if (hasError) return;
@@ -1328,7 +886,8 @@ function DraftsModal({
                     </p>
                     <p className="mt-0.5 text-xs text-muted-foreground">
                       {t("pos.sale.cartItems", { count: itemCount })} ·{" "}
-                      {formatMoney(total)} · {formatDateTime(
+                      {formatMoney(total)} ·{" "}
+                      {formatDateTime(
                         new Date(draft.createdAt).toISOString(),
                       )}
                     </p>
@@ -1366,7 +925,10 @@ function SaleCartEmpty() {
   return (
     <div className="flex flex-1 flex-col items-center justify-center px-6 py-14 text-center">
       <div className="flex size-14 items-center justify-center rounded-2xl border border-border/70 bg-muted/40">
-        <ShoppingCart className="size-6 text-muted-foreground" strokeWidth={1.75} />
+        <ShoppingCart
+          className="size-6 text-muted-foreground"
+          strokeWidth={1.75}
+        />
       </div>
       <p className="mt-4 text-sm font-medium text-foreground">
         {t("pos.sale.emptyCart")}
@@ -1375,71 +937,6 @@ function SaleCartEmpty() {
         {t("pos.sale.emptyCartHint")}
       </p>
     </div>
-  );
-}
-
-function SaleProductCard({
-  product,
-  onAdd,
-}: {
-  product: PosProduct;
-  onAdd: () => void;
-}) {
-  const { t } = useTranslation();
-  const inStock = product.isSellable;
-  const lowStock = inStock && product.stockQty <= 5;
-
-  const stockLabel = !inStock
-    ? t("pos.sale.outOfStock")
-    : t("pos.sale.stockLeft", { count: product.stockQty });
-
-  const priceClassName =
-    "truncate text-sm font-semibold tabular-nums tracking-tight sm:text-base lg:text-[15px] xl:text-[17px] 2xl:text-lg text-foreground";
-
-  return (
-    <button
-      type="button"
-      disabled={!inStock}
-      onClick={onAdd}
-      className={cn(
-        "group flex min-h-[112px] flex-col rounded-xl border p-2.5 text-left transition-[border-color,background-color,box-shadow] duration-150 sm:min-h-[120px] sm:p-3 lg:min-h-[128px] lg:p-3 xl:min-h-[132px] xl:p-3.5",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/25 disabled:opacity-100",
-        inStock
-          ? "relative cursor-pointer border-border/80 bg-card hover:border-primary/25 hover:bg-primary/[0.04] hover:shadow-sm active:scale-[0.99]"
-          : "relative cursor-not-allowed border-border/60 bg-muted/20 ring-1 ring-inset ring-border/40",
-      )}
-    >
-      <p
-        className={cn(
-          "line-clamp-2 flex-1 text-xs font-medium leading-snug sm:text-sm lg:text-sm lg:leading-normal xl:text-base 2xl:text-[17px] 2xl:leading-snug",
-          inStock ? "text-foreground/90" : "text-foreground/80",
-        )}
-      >
-        {product.name}
-      </p>
-
-      <div
-        className={cn(
-          "mt-3 flex items-center justify-between gap-2 border-t pt-3",
-          inStock ? "border-border/50" : "border-border/40",
-        )}
-      >
-        <span className={priceClassName}>
-          {formatMoney(product.finalPrice)}
-        </span>
-
-        <span
-          className={cn(
-            "shrink-0 rounded-md px-2 py-0.5 text-[10px] font-medium tabular-nums sm:text-xs lg:text-[11px] xl:text-xs 2xl:text-[13px]",
-            !inStock && "border border-destructive/20 bg-destructive/10 text-destructive/90",
-            inStock && lowStock && "bg-amber-500/10 text-amber-800/90 dark:text-amber-200/90",
-            inStock && !lowStock && "bg-muted/60 text-muted-foreground",
-          )}
-        >
-          {stockLabel}
-        </span>
-      </div>
-    </button>
   );
 }
 
@@ -1460,22 +957,36 @@ function SaleSuccessScreen({
       <div className="mx-auto max-w-2xl">
         <PageHeader
           title={t("pos.sale.successTitle")}
-          description={order.invoiceNumber}
+          description={`${order.orderNumber} · ${order.invoiceNumber}`}
         />
         <div className="rounded-xl border border-border/70 bg-card p-6 shadow-card">
           <div className="space-y-2 text-sm">
             <div className="flex justify-between">
-              <span className="text-muted-foreground">{t("pos.orders.dailySerial")}</span>
+              <span className="text-muted-foreground">
+                {t("pos.orders.orderId")}
+              </span>
+              <span className="font-semibold tabular-nums">
+                {order.orderNumber}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">
+                {t("pos.orders.dailySerial")}
+              </span>
               <span className="font-semibold tabular-nums">
                 #{order.dailySerial ?? "-"}
               </span>
             </div>
             <div className="flex justify-between">
-              <span className="text-muted-foreground">{t("pos.orders.invoice")}</span>
+              <span className="text-muted-foreground">
+                {t("pos.orders.invoice")}
+              </span>
               <span className="font-medium">{order.invoiceNumber}</span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-muted-foreground">{t("pos.orders.status")}</span>
+              <span className="text-muted-foreground">
+                {t("pos.orders.status")}
+              </span>
               <OrderStatusBadge status={order.status} />
             </div>
             <div className="flex justify-between">
@@ -1509,39 +1020,8 @@ function SaleSuccessScreen({
           )}
 
           {receiptQuery.data && (
-            <div
-              id="receipt-print"
-              className="mt-4 space-y-2 rounded-lg border border-border bg-muted p-4 text-sm"
-            >
-              <p className="font-bold">
-                {receiptQuery.data.shopInfo.name || t("pos.header.storeName")}
-              </p>
-              <p className="text-muted-foreground">
-                {formatDateTime(receiptQuery.data.date)}
-              </p>
-              <p>{receiptQuery.data.customer.name}</p>
-              {receiptQuery.data.items.map((item, idx) => (
-                <div key={idx} className="flex justify-between">
-                  <span>
-                    {item.productName} x {item.quantity}
-                  </span>
-                  <span>{formatMoney(toMoney(item.totalAmount))}</span>
-                </div>
-              ))}
-              {receiptQuery.data.notes?.trim() && (
-                <div className="rounded-md border border-border/60 bg-muted/40 px-3 py-2">
-                  <p className="text-xs font-semibold text-muted-foreground">
-                    {t("pos.sale.orderNotes")}
-                  </p>
-                  <p className="mt-1 whitespace-pre-wrap text-sm">
-                    {receiptQuery.data.notes}
-                  </p>
-                </div>
-              )}
-              <div className="flex justify-between border-t pt-2 font-bold">
-                <span>{t("pos.orders.total")}</span>
-                <span>{formatMoney(getOrderNetTotal(receiptQuery.data))}</span>
-              </div>
+            <div className="mt-4">
+              <ReceiptTicket receipt={receiptQuery.data} />
             </div>
           )}
 
@@ -1553,11 +1033,7 @@ function SaleSuccessScreen({
             >
               {t("pos.orders.print")}
             </Button>
-            <Button
-              onClick={onNewSale}
-            >
-              {t("pos.sale.newSale")}
-            </Button>
+            <Button onClick={onNewSale}>{t("pos.sale.newSale")}</Button>
           </div>
         </div>
       </div>

@@ -24,7 +24,7 @@ export function useAuthBootstrap() {
   });
 
   const branchQuery = useQuery({
-    queryKey: ["branches", "accessible"],
+    queryKey: queryKeys.branches.accessible(),
     queryFn: () => getAccessibleBranches(),
     retry: false,
     refetchOnWindowFocus: false,

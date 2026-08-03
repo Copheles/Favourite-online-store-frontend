@@ -4,8 +4,10 @@ import {
   deleteCustomer,
   getCustomer,
   listCustomers,
+  listOutstandingCustomers,
   updateCustomer,
   type ListCustomersParams,
+  type ListOutstandingParams,
 } from "@/apis/customer.api";
 import type { Customer, CustomerInput } from "@/types/api";
 import { STALE_TIME } from "@/lib/queryConfig";
@@ -28,6 +30,27 @@ export function useCustomers(
     staleTime: STALE_TIME.catalog,
     placeholderData: (prev) => prev,
     enabled: (options?.enabled ?? true) && !!currentBranchId,
+  });
+}
+
+export function useOutstandingCustomers(
+  params: Omit<ListOutstandingParams, "branchId"> = {},
+) {
+  const { currentBranchId } = useBranch();
+
+  return useQuery({
+    queryKey: queryKeys.customers.outstanding({
+      ...params,
+      branchId: currentBranchId,
+    }),
+    queryFn: () =>
+      listOutstandingCustomers({
+        ...params,
+        branchId: currentBranchId ?? undefined,
+      }),
+    staleTime: STALE_TIME.transactional,
+    placeholderData: (prev) => prev,
+    enabled: !!currentBranchId,
   });
 }
 

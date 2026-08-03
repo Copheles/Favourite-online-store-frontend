@@ -10,7 +10,10 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { ApiErrorAlert } from "@/components/forms/ApiErrorAlert";
+import {
+  ApiErrorAlert,
+  getApiErrorMessage,
+} from "@/components/forms/ApiErrorAlert";
 import { BrandLogo } from "@/components/layout/BrandLogo";
 import { LoginField } from "@/components/login/LoginField";
 import type { LoginFormValues } from "@/validation/login.validation";
@@ -33,6 +36,12 @@ export function LoginFormPanel({
   onTogglePassword,
 }: LoginFormPanelProps) {
   const { t } = useTranslation();
+
+  const errorMessage = error
+    ? (error as { response?: { status?: number } }).response?.status === 409
+      ? t("login.deviceConflict")
+      : getApiErrorMessage(error, t("login.errorFallback"))
+    : null;
 
   return (
     <section className="flex min-h-[580px] flex-col justify-center bg-card px-6 py-10 sm:px-12 lg:px-14">
@@ -114,7 +123,9 @@ export function LoginFormPanel({
               )}
             />
 
-            <ApiErrorAlert error={error} fallback={t("login.errorFallback")} />
+            {errorMessage && (
+              <ApiErrorAlert error={{ message: errorMessage }} />
+            )}
 
             <Button
               type="submit"

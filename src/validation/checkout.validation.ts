@@ -20,11 +20,11 @@ export type CheckoutFormValues = z.infer<
 export function validatePaidAmount(
   paidAmount: number,
   netTotal: number,
+  customerId: string | null | undefined,
   t: (key: string) => string,
 ): string | null {
-  const effectivePaid = paidAmount > 0 ? paidAmount : netTotal;
-  if (effectivePaid < netTotal) {
-    return t("pos.sale.paidTooLow");
+  if (paidAmount < netTotal && !customerId) {
+    return t("pos.sale.creditCustomerRequired");
   }
   return null;
 }

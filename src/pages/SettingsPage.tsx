@@ -1,168 +1,47 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useTranslation } from "react-i18next";
-import { CheckCircle2, Gift, KeyRound, Settings } from "lucide-react";
+import { CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
 import { ApiErrorAlert } from "@/components/forms/ApiErrorAlert";
 import { FormTextField } from "@/components/forms/FormTextField";
-import { PageHeader } from "@/components/shared/PageStates";
+import { FormTextareaField } from "@/components/forms/FormTextareaField";
+import { FormSelect } from "@/components/forms/FormSelect";
 import { PosPageShell } from "@/components/shared/pos/PosPageShell";
+import { SettingsAccordionSection } from "@/components/settings/SettingsAccordionSection";
+import { SettingsToolbar } from "@/components/settings/SettingsToolbar";
 import { getStoreSettings, updateStoreSettings } from "@/apis/settings.api";
 import { useAuth } from "@/hooks/useAuth";
 import { useAdminMutations } from "@/hooks/useAdmin";
+import { useReceiptPrintSettings } from "@/hooks/useReceiptPrintSettings";
+import {
+  FALLBACK_PAPER_WIDTH_MM,
+} from "@/lib/printSettingsStorage";
+import {
+  formValuesToSetting,
+  settingToFormValues,
+} from "@/lib/receiptPaperSettingsForm";
 import { queryKeys } from "@/lib/queryKeys";
-import { cn } from "@/lib/utils";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   getPasswordSchema,
   getPointsSettingsSchema,
+  getReceiptPaperSchema,
+  getShopSettingsSchema,
+  RECEIPT_PAPER_WIDTH_PRESETS,
   type PasswordFormValues,
   type PointsSettingsFormValues,
+  type ReceiptPaperFormValues,
+  type ShopSettingsFormValues,
 } from "@/validation/settings.validation";
 
-type Tab = "password" | "loyalty";
-
-const TAB_META: Record<
-  Tab,
-  { icon: React.ElementType; descriptionKey: string }
-> = {
-  password: { icon: KeyRound, descriptionKey: "pos.settings.passwordTabDesc" },
-  loyalty: { icon: Gift, descriptionKey: "pos.settings.loyaltyTabDesc" },
-};
-
-export function SettingsPage() {
-  const { t } = useTranslation();
-  const { isAdmin } = useAuth();
-  const [tab, setTab] = useState<Tab>("password");
-  const contentRef = useRef<HTMLDivElement>(null);
-  const mutations = useAdminMutations();
-
-  const tabs: Tab[] = isAdmin ? ["password", "loyalty"] : ["password"];
-
-  useEffect(() => {
-    if (tab === "loyalty" && !isAdmin) {
-      setTab("password");
-    }
-  }, [isAdmin, tab]);
-
-  useEffect(() => {
-    contentRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-  }, [tab]);
-
-  return (
-    <PosPageShell>
-      <PageHeader
-        title={t("sidebar.menu.settings")}
-        description={t("pos.settings.description")}
-      />
-
-      <div className="space-y-6">
-        <div className="relative overflow-hidden rounded-2xl border border-border/70 bg-card p-6 shadow-card sm:p-8 md:p-10">
-          <div
-            aria-hidden
-            className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(37,99,235,0.06),transparent_55%)]"
-          />
-          <div className="relative text-center">
-            <div className="mx-auto mb-4 flex size-16 items-center justify-center rounded-full bg-accent">
-              <Settings
-                className="size-8 text-accent-foreground"
-                strokeWidth={1.5}
-              />
-            </div>
-            <h3 className="text-lg font-bold tracking-tight text-card-foreground">
-              {t("pos.settings.heroTitle")}
-            </h3>
-            <p className="mx-auto mt-1.5 max-w-lg text-sm text-muted-foreground">
-              {t("pos.settings.heroText")}
-            </p>
-          </div>
-        </div>
-
-        {tabs.length > 1 && (
-          <div className="grid gap-4 sm:grid-cols-2">
-            {tabs.map((item) => {
-              const meta = TAB_META[item];
-              const Icon = meta.icon;
-              const isActive = tab === item;
-
-              return (
-                <button
-                  key={item}
-                  type="button"
-                  onClick={() => setTab(item)}
-                  className={cn(
-                    "rounded-xl border bg-card p-5 text-left shadow-card transition-all sm:p-6",
-                    "hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-card-hover",
-                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/25",
-                    isActive
-                      ? "border-primary/40 ring-1 ring-primary/15"
-                      : "border-border/70",
-                  )}
-                >
-                  <div
-                    className={cn(
-                      "flex size-10 items-center justify-center rounded-lg bg-accent",
-                      isActive && "bg-primary/10",
-                    )}
-                  >
-                    <Icon
-                      className={cn(
-                        "size-5 text-accent-foreground",
-                        isActive && "text-primary",
-                      )}
-                    />
-                  </div>
-                  <h4 className="mt-3 font-semibold text-card-foreground">
-                    {t(`pos.settings.tabs.${item}`)}
-                  </h4>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    {t(meta.descriptionKey)}
-                  </p>
-                </button>
-              );
-            })}
-          </div>
-        )}
-
-        <div
-          ref={contentRef}
-          className="rounded-xl border border-border/70 bg-card p-5 shadow-card sm:p-6"
-        >
-          {tab === "password" && (
-            <PasswordTab mutation={mutations.changePassword} />
-          )}
-          {tab === "loyalty" && isAdmin && <LoyaltyTab />}
-        </div>
-      </div>
-    </PosPageShell>
-  );
-}
-
-function SettingsSectionHeader({
-  icon: Icon,
-  title,
-  description,
-}: {
-  icon: React.ElementType;
-  title: string;
-  description?: string;
-}) {
-  return (
-    <div className="mb-5 flex items-start gap-3 border-b border-border/60 pb-5">
-      <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-accent">
-        <Icon className="size-5 text-accent-foreground" />
-      </div>
-      <div>
-        <h3 className="font-semibold text-card-foreground">{title}</h3>
-        {description && (
-          <p className="mt-1 text-sm text-muted-foreground">{description}</p>
-        )}
-      </div>
-    </div>
-  );
-}
+type SettingsSectionId =
+  | "general"
+  | "localDevice"
+  | "shopInfo"
+  | "featureControl";
 
 function SuccessNote({ message }: { message: string }) {
   return (
@@ -173,12 +52,76 @@ function SuccessNote({ message }: { message: string }) {
   );
 }
 
-function PasswordTab({
-  mutation,
+export function SettingsPage() {
+  const { hasStoreOperatorAccess } = useAuth();
+  const [openSections, setOpenSections] = useState<
+    Record<SettingsSectionId, boolean>
+  >({
+    general: false,
+    localDevice: false,
+    shopInfo: false,
+    featureControl: false,
+  });
+
+  const setSectionOpen = useCallback(
+    (id: SettingsSectionId, open: boolean) => {
+      setOpenSections((prev) => ({ ...prev, [id]: open }));
+    },
+    [],
+  );
+
+  const openSection = useCallback((id: SettingsSectionId) => {
+    setOpenSections((prev) => ({ ...prev, [id]: true }));
+  }, []);
+
+  return (
+    <PosPageShell>
+      <div className="mx-auto max-w-2xl">
+        <SettingsToolbar
+          showAdminShortcuts={hasStoreOperatorAccess}
+          onOpenDevice={() => openSection("localDevice")}
+          onOpenShop={() => openSection("shopInfo")}
+        />
+
+        <div className="settings-accordion-stack">
+          <GeneralSettingsSection
+            open={openSections.general}
+            onOpenChange={(open) => setSectionOpen("general", open)}
+          />
+
+          {hasStoreOperatorAccess && (
+            <>
+              <LocalDeviceSettingsSection
+                open={openSections.localDevice}
+                onOpenChange={(open) => setSectionOpen("localDevice", open)}
+              />
+              <ShopInfoSettingsSection
+                open={openSections.shopInfo}
+                onOpenChange={(open) => setSectionOpen("shopInfo", open)}
+              />
+              <FeatureControlSettingsSection
+                open={openSections.featureControl}
+                onOpenChange={(open) => setSectionOpen("featureControl", open)}
+              />
+            </>
+          )}
+        </div>
+      </div>
+    </PosPageShell>
+  );
+}
+
+function GeneralSettingsSection({
+  open,
+  onOpenChange,
 }: {
-  mutation: ReturnType<typeof useAdminMutations>["changePassword"];
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }) {
   const { t } = useTranslation();
+  const { canWrite } = useAuth();
+  const mutations = useAdminMutations();
+  const mutation = mutations.changePassword;
   const schema = useMemo(() => getPasswordSchema(t), [t]);
   const form = useForm<PasswordFormValues>({
     resolver: zodResolver(schema),
@@ -190,16 +133,15 @@ function PasswordTab({
   }, [mutation.isSuccess, form]);
 
   return (
-    <div className="mx-auto max-w-md">
-      <SettingsSectionHeader
-        icon={KeyRound}
-        title={t("pos.settings.tabs.password")}
-        description={t("pos.settings.passwordTabDesc")}
-      />
+    <SettingsAccordionSection
+      title={t("pos.settings.sections.general")}
+      open={open}
+      onOpenChange={onOpenChange}
+    >
       <Form {...form}>
         <form
           onSubmit={form.handleSubmit((values) => mutation.mutate(values))}
-          className="space-y-3"
+          className="mx-auto max-w-md space-y-3"
         >
           <FormTextField
             control={form.control}
@@ -218,17 +160,238 @@ function PasswordTab({
           )}
           <ApiErrorAlert error={mutation.error} />
           <div className="flex justify-end pt-1">
-            <Button type="submit" disabled={mutation.isPending}>
+            <Button type="submit" disabled={!canWrite || mutation.isPending}>
               {t("pos.common.save")}
             </Button>
           </div>
         </form>
       </Form>
-    </div>
+    </SettingsAccordionSection>
   );
 }
 
-function LoyaltyTab() {
+function LocalDeviceSettingsSection({
+  open,
+  onOpenChange,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
+  const { t } = useTranslation();
+  const { isAdmin } = useAuth();
+  const queryClient = useQueryClient();
+  const [savedLocally, setSavedLocally] = useState(false);
+  const { setting, paperWidthMm, shopDefaultWidthMm, save, reset } =
+    useReceiptPrintSettings();
+
+  const schema = useMemo(() => getReceiptPaperSchema(t), [t]);
+
+  const form = useForm<ReceiptPaperFormValues>({
+    resolver: zodResolver(schema),
+    values: settingToFormValues(setting),
+  });
+
+  const mode = form.watch("mode");
+
+  const paperModeOptions = useMemo(
+    () => [
+      {
+        value: "shopDefault",
+        label: t("pos.settings.receiptPaperShopDefault", {
+          width: shopDefaultWidthMm ?? FALLBACK_PAPER_WIDTH_MM,
+        }),
+      },
+      ...RECEIPT_PAPER_WIDTH_PRESETS.map((width) => ({
+        value: String(width),
+        label: t(`pos.settings.receiptPaperWidthOption${width}`),
+      })),
+      { value: "a4", label: t("pos.settings.receiptPaperOptionA4") },
+      { value: "custom", label: t("pos.settings.receiptPaperOptionCustom") },
+    ],
+    [t, shopDefaultWidthMm],
+  );
+
+  const shopDefaultMutation = useMutation({
+    mutationFn: updateStoreSettings,
+    onSuccess: (data) => {
+      queryClient.setQueryData(queryKeys.settings.store(), data);
+    },
+  });
+
+  return (
+    <SettingsAccordionSection
+      title={t("pos.settings.sections.localDevice")}
+      open={open}
+      onOpenChange={onOpenChange}
+    >
+      <Form {...form}>
+        <form
+          onSubmit={form.handleSubmit((values) => {
+            save(formValuesToSetting(values));
+            setSavedLocally(true);
+          })}
+          className="mx-auto max-w-md space-y-3"
+        >
+          <FormSelect
+            control={form.control}
+            name="mode"
+            label={t("pos.settings.receiptPaperWidth")}
+            options={paperModeOptions}
+          />
+          {mode === "custom" && (
+            <FormTextField
+              control={form.control}
+              name="customWidthMm"
+              label={t("pos.settings.receiptPaperCustomWidth")}
+              type="number"
+            />
+          )}
+          <p className="text-xs text-muted-foreground">
+            {t("pos.settings.receiptPaperDeviceOnlyHint")}
+          </p>
+          <p className="text-xs text-muted-foreground">
+            {t("pos.settings.receiptPaperWidthHint")}
+          </p>
+          {savedLocally && (
+            <SuccessNote message={t("pos.settings.deviceSettingsSaved")} />
+          )}
+          {shopDefaultMutation.isSuccess && (
+            <SuccessNote message={t("pos.settings.shopDefaultPaperSaved")} />
+          )}
+          <ApiErrorAlert error={shopDefaultMutation.error} />
+          <div className="flex flex-wrap justify-end gap-2 pt-1">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                reset();
+                setSavedLocally(false);
+                shopDefaultMutation.reset();
+              }}
+            >
+              {t("pos.settings.receiptPaperReset")}
+            </Button>
+            {isAdmin && (
+              <Button
+                type="button"
+                variant="outline"
+                disabled={shopDefaultMutation.isPending}
+                onClick={() => {
+                  setSavedLocally(false);
+                  shopDefaultMutation.mutate({
+                    receiptPaperWidthMm: paperWidthMm,
+                  });
+                }}
+              >
+                {t("pos.settings.receiptPaperSetShopDefault")}
+              </Button>
+            )}
+            <Button type="submit">{t("pos.common.save")}</Button>
+          </div>
+        </form>
+      </Form>
+    </SettingsAccordionSection>
+  );
+}
+
+function ShopInfoSettingsSection({
+  open,
+  onOpenChange,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
+  const { t } = useTranslation();
+  const queryClient = useQueryClient();
+  const settingsQuery = useQuery({
+    queryKey: queryKeys.settings.store(),
+    queryFn: getStoreSettings,
+  });
+
+  const schema = useMemo(
+    () =>
+      getShopSettingsSchema(t).pick({
+        shopName: true,
+        shopAddress: true,
+        shopPhone: true,
+      }),
+    [t],
+  );
+
+  const form = useForm<
+    Pick<ShopSettingsFormValues, "shopName" | "shopAddress" | "shopPhone">
+  >({
+    resolver: zodResolver(schema),
+    values: {
+      shopName: settingsQuery.data?.shopName ?? "",
+      shopAddress: settingsQuery.data?.shopAddress ?? "",
+      shopPhone: settingsQuery.data?.shopPhone ?? "",
+    },
+  });
+
+  const mutation = useMutation({
+    mutationFn: updateStoreSettings,
+    onSuccess: (data) => {
+      queryClient.setQueryData(queryKeys.settings.store(), data);
+    },
+  });
+
+  return (
+    <SettingsAccordionSection
+      title={t("pos.settings.sections.shopInfo")}
+      open={open}
+      onOpenChange={onOpenChange}
+    >
+      <Form {...form}>
+        <form
+          onSubmit={form.handleSubmit((values) => mutation.mutate(values))}
+          className="mx-auto max-w-md space-y-3"
+        >
+          <FormTextField
+            control={form.control}
+            name="shopName"
+            label={t("pos.settings.shopName")}
+          />
+          <FormTextareaField
+            control={form.control}
+            name="shopAddress"
+            label={t("pos.settings.shopAddress")}
+            rows={3}
+          />
+          <FormTextField
+            control={form.control}
+            name="shopPhone"
+            label={t("pos.settings.shopPhone")}
+            placeholder={t("pos.settings.shopPhonePlaceholder")}
+          />
+          <p className="text-xs text-muted-foreground">
+            {t("pos.settings.shopHint")}
+          </p>
+          {mutation.isSuccess && (
+            <SuccessNote message={t("pos.settings.shopSettingsSaved")} />
+          )}
+          <ApiErrorAlert error={mutation.error || settingsQuery.error} />
+          <div className="flex justify-end pt-1">
+            <Button
+              type="submit"
+              disabled={mutation.isPending || settingsQuery.isLoading}
+            >
+              {t("pos.common.save")}
+            </Button>
+          </div>
+        </form>
+      </Form>
+    </SettingsAccordionSection>
+  );
+}
+
+function FeatureControlSettingsSection({
+  open,
+  onOpenChange,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const schema = useMemo(() => getPointsSettingsSchema(t), [t]);
@@ -252,16 +415,15 @@ function LoyaltyTab() {
   });
 
   return (
-    <div className="mx-auto max-w-md">
-      <SettingsSectionHeader
-        icon={Gift}
-        title={t("pos.settings.tabs.loyalty")}
-        description={t("pos.settings.loyaltyTabDesc")}
-      />
+    <SettingsAccordionSection
+      title={t("pos.settings.sections.featureControl")}
+      open={open}
+      onOpenChange={onOpenChange}
+    >
       <Form {...form}>
         <form
           onSubmit={form.handleSubmit((values) => mutation.mutate(values))}
-          className="space-y-3"
+          className="mx-auto max-w-md space-y-3"
         >
           <FormTextField
             control={form.control}
@@ -287,6 +449,6 @@ function LoyaltyTab() {
           </div>
         </form>
       </Form>
-    </div>
+    </SettingsAccordionSection>
   );
 }

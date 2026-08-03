@@ -32,6 +32,7 @@ import {
 import { PosToolbar, PosToolbarActions, PosToolbarGroup } from "@/components/shared/pos/PosToolbar";
 import { TableSkeleton } from "@/components/shared/pos/TableSkeleton";
 import { RestockModal } from "@/components/shared/pos/RestockModal";
+import { PosToaster, usePosToast } from "@/components/shared/pos/PosToast";
 import { useAppliedSearch } from "@/hooks/useAppliedSearch";
 import { useBranch } from "@/hooks/useBranch";
 import { useUrlLimit, useUrlPage, useUrlStringParam } from "@/hooks/useUrlQuery";
@@ -43,7 +44,8 @@ import { resetUrlPage } from "@/lib/urlQuery";
 export function StockPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { canRestock, canWriteCatalog } = useBranch();
+  const { canRestock, canWriteCatalog, currentBranch } = useBranch();
+  const { toasts, showToast, dismiss } = usePosToast();
   const [, setSearchParams] = useSearchParams();
   const {
     searchInput,
@@ -76,6 +78,10 @@ export function StockPage() {
 
   const rows = query.data?.items ?? [];
   const totalPages = query.data?.meta.totalPages ?? 1;
+  const hasActiveFilters = Boolean(appliedSearch || fromDate || toDate);
+  const branchLabel = currentBranch
+    ? `${currentBranch.name} (${currentBranch.code})`
+    : null;
 
   function resetFilters() {
     setSearchInput("");
@@ -96,7 +102,11 @@ export function StockPage() {
     <PosPageShell>
       <PageHeader
         title={t("pos.modules.stockList")}
-        description={t("pos.stock.historyDescription")}
+        description={
+          branchLabel
+            ? `${t("pos.stock.historyDescription")} ${t("pos.stock.viewingBranch", { branch: branchLabel })}`
+            : t("pos.stock.historyDescription")
+        }
         action={
           (canWriteCatalog || canRestock) ? (
             <div className="flex flex-wrap gap-2">
@@ -180,7 +190,13 @@ export function StockPage() {
       {query.isLoading && !query.data && <TableSkeleton rows={8} cols={6} />}
       {query.isError && <ErrorState />}
       {!query.isLoading && rows.length === 0 && (
-        <EmptyState message={t("pos.stock.noMovements")} />
+        <EmptyState
+          message={
+            hasActiveFilters
+              ? t("pos.stock.noMovementsFiltered")
+              : t("pos.stock.noMovements")
+          }
+        />
       )}
 
       {!query.isLoading && rows.length > 0 && (
@@ -263,8 +279,13 @@ export function StockPage() {
       />
 
       {canRestock && restockOpen && (
-        <RestockModal onClose={() => setRestockOpen(false)} />
+        <RestockModal
+          onClose={() => setRestockOpen(false)}
+          onSuccess={() => showToast("success", t("pos.stock.restockSuccess"))}
+        />
       )}
+
+      <PosToaster toasts={toasts} onDismiss={dismiss} />
     </PosPageShell>
   );
 }

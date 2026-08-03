@@ -1,5 +1,4 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { logout as logoutApi } from "@/apis/auth.api";
 import { checkout } from "@/apis/checkout.api";
 import { listCustomers } from "@/apis/customer.api";
 import {
@@ -9,36 +8,38 @@ import {
 import type { CheckoutInput } from "@/types/api";
 import { PAGE_SIZE, STALE_TIME } from "@/lib/queryConfig";
 import { queryKeys } from "@/lib/queryKeys";
-import { useAppDispatch } from "@/redux/hooks";
-import { logout as logoutAction, completeLogout } from "@/redux/slices/authSlice";
-import { clearBranches } from "@/redux/slices/branchSlice";
-import { beginLogout, endLogout } from "@/lib/authSession";
-import { useNavigate } from "react-router-dom";
 import { useBranch } from "./useBranch";
+import { useAuth } from "./useAuth";
 
 type PosProductsOptions = {
   keepPrevious?: boolean;
   enabled?: boolean;
 };
 
-/** Sale catalog + checkout use the active branch (staff locked to home). */
+/** Sale catalog + checkout use the active branch (staff/admin locked to home). */
 function useSaleBranchId() {
   const { currentBranchId, defaultBranchId } = useBranch();
+  const { isAdmin } = useAuth();
+  if (isAdmin) {
+    return defaultBranchId;
+  }
   return currentBranchId ?? defaultBranchId;
 }
 
 export function usePosProducts(
-  params: Omit<ListPosProductsParams, "branchId"> = {},
+  params: ListPosProductsParams = {},
   options: PosProductsOptions = {},
 ) {
   const { keepPrevious = true, enabled = true } = options;
   const saleBranchId = useSaleBranchId();
+  const { branchId: branchIdOverride, ...rest } = params;
+  const branchId = branchIdOverride ?? saleBranchId;
 
   return useQuery({
-    queryKey: queryKeys.pos.list({ ...params, branchId: saleBranchId }),
-    queryFn: () => listPosProducts({ ...params, branchId: saleBranchId }),
+    queryKey: queryKeys.pos.list({ ...rest, branchId }),
+    queryFn: () => listPosProducts({ ...rest, branchId }),
     staleTime: STALE_TIME.transactional,
-    enabled: enabled && !!saleBranchId,
+    enabled: enabled && !!branchId,
     ...(keepPrevious
       ? {
           placeholderData: (
@@ -116,24 +117,4 @@ export function useCheckout() {
   });
 }
 
-export function useLogout() {
-  const dispatch = useAppDispatch();
-  const navigate = useNavigate();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: logoutApi,
-    onMutate: () => {
-      beginLogout();
-      dispatch(logoutAction());
-      dispatch(clearBranches());
-      queryClient.cancelQueries();
-      navigate("/login", { replace: true });
-    },
-    onSettled: () => {
-      queryClient.removeQueries();
-      dispatch(completeLogout());
-      endLogout();
-    },
-  });
-}
+export { useLogout } from "./useLogout";

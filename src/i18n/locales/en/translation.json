@@ -15,6 +15,7 @@
     "show": "Show",
     "hide": "Hide",
     "errorFallback": "Sign in failed. Please try again.",
+    "deviceConflict": "Already logged in on another device. Contact super-admin to sign out the user or raise your device limit.",
     "brand": {
       "company": "Favourite Myanmar Co.,Ltd.",
       "subtitle": "Point of Sale System",
@@ -54,9 +55,12 @@
       "inTransit": "In Transit",
       "delivered": "Delivered",
       "customers": "Customers",
+      "outstanding": "Outstanding",
       "reports": "Reports",
       "settings": "Settings",
-      "helpCenter": "Help Center"
+      "helpCenter": "Help Center",
+      "userManagement": "User Management",
+      "branchManagement": "Branch Management"
     }
   },
   "header": {
@@ -93,9 +97,87 @@
       "stockList": "Stock List",
       "orderHistory": "Order History",
       "member": "Member",
+      "outstanding": "Outstanding",
       "summaryReport": "Summary Report",
       "products": "Products",
-      "expenses": "Expenses"
+      "expenses": "Expenses",
+      "ownerIntegration": "Owner API Integration",
+      "userManagement": "User Management",
+      "branchManagement": "Branch Management"
+    },
+    "userManagement": {
+      "title": "User Management",
+      "description": "Create POS users, set device limits, and revoke active sessions.",
+      "createUser": "Create user",
+      "loadError": "Failed to load users.",
+      "maxDevices": "Max devices",
+      "activeSessions": "Active sessions",
+      "status": "Status",
+      "active": "Active",
+      "inactive": "Inactive",
+      "sessions": "Sessions",
+      "resetPassword": "Reset password",
+      "deactivate": "Deactivate",
+      "activate": "Activate",
+      "revokeAll": "Revoke all sessions",
+      "initialPassword": "Initial password",
+      "newPassword": "New password",
+      "noSessions": "No sessions recorded.",
+      "revoked": "Revoked"
+    },
+    "users": {
+      "description": "Create POS users, set device limits, and revoke active sessions.",
+      "add": "Add user",
+      "loadError": "Failed to load users.",
+      "searchPlaceholder": "Search by username…",
+      "filterByRole": "Filter by role",
+      "empty": "No users found.",
+      "username": "Username",
+      "displayName": "Display name",
+      "usernameChangeNote": "Changing the username signs the user out on all devices.",
+      "role": "Role",
+      "sessions": "Sessions",
+      "createdAt": "Created",
+      "sessionCount": "{{active}} / {{limit}} devices",
+      "viewSessions": "Sessions",
+      "sessionsLoadError": "Failed to load sessions.",
+      "createTitle": "Create user",
+      "createSubmit": "Create user",
+      "editTitle": "Edit {{username}}",
+      "newPasswordOptional": "New password (optional)",
+      "status": "Status",
+      "active": "Active",
+      "inactive": "Inactive",
+      "roleOwner": "Owner",
+      "roleAdmin": "Admin",
+      "roleStaff": "Staff",
+      "roleMonitor": "Monitor",
+      "sessionsTitle": "Sessions — {{username}}",
+      "noSessions": "No sessions recorded.",
+      "device": "Device",
+      "loggedInAt": "Logged in",
+      "expiresAt": "Expires",
+      "unknownDevice": "Unknown device",
+      "lastSeenAt": "Last seen",
+      "revoke": "Revoke session",
+      "revoked": "Revoked",
+      "revokeTitle": "Revoke session?",
+      "revokeDescription": "This will log out \"{{device}}\" immediately. The user can sign in again if a device slot is available."
+    },
+    "branches": {
+      "description": "Create branches and manage branch names, contact details, and active status.",
+      "add": "Add branch",
+      "loadError": "Failed to load branches.",
+      "empty": "No branches found.",
+      "code": "Code",
+      "codeMin": "Code must be at least 2 characters",
+      "codeFormat": "Code must contain only letters, numbers, and underscores",
+      "name": "Name",
+      "address": "Address",
+      "phone": "Phone",
+      "createTitle": "Create branch",
+      "createSubmit": "Create branch",
+      "editTitle": "Edit {{name}}"
     },
     "pages": {
       "comingSoon": "This module is coming soon.",
@@ -204,6 +286,8 @@
       "total": "Total",
       "checkout": "Complete sale",
       "processing": "Processing...",
+      "readOnlyCheckout": "View only — checkout disabled",
+      "checkoutDefaultBranchOnly": "Switch to your home branch to complete sales",
       "checkoutError": "Checkout failed.",
       "successTitle": "Sale completed",
       "newSale": "New sale",
@@ -222,6 +306,10 @@
       "loadMore": "Load more products",
       "productsShown": "{{shown}} of {{total}} products",
       "paidTooLow": "Paid amount must be at least the net total.",
+      "creditCustomerRequired": "Select a customer for credit sales.",
+      "creditSale": "Credit sale",
+      "creditSaleHint": "This order will be saved as customer credit with {{amount}} balance due.",
+      "saveCreditSale": "Save credit sale",
       "allCategories": "All categories",
       "allSubCategories": "All subcategories",
       "resetCategories": "Reset categories"
@@ -231,13 +319,16 @@
       "futureDescription": "Upcoming scheduled sales with a future sale date.",
       "historyDescription": "Search and review past orders.",
       "pendingDescription": "Orders being processed. Complete or cancel them here.",
-      "searchPlaceholder": "Search invoice or customer...",
+      "searchPlaceholder": "Search order ID, invoice, or customer...",
       "empty": "No orders found.",
+      "orderId": "Order ID",
       "invoice": "Invoice",
       "dailySerial": "No.",
       "customer": "Customer",
       "total": "Total",
+      "balanceDue": "Balance due",
       "payment": "Payment",
+      "payments": "Payments",
       "date": "Date",
       "cashier": "Cashier",
       "status": "Status",
@@ -257,7 +348,19 @@
       "items": "Items",
       "deliveryFee": "Delivery fee",
       "tax": "Tax",
-      "thankYou": "Thank you for your purchase!"
+      "thankYou": "Thank you for your purchase!",
+      "orderId": "Order ID",
+      "invoiceNo": "Invoice No",
+      "printTime": "Print time",
+      "orderDateTime": "Order date/time",
+      "colName": "Name",
+      "colQty": "Qty",
+      "colPrice": "Price",
+      "colAmount": "Amount",
+      "netTotal": "Net Total",
+      "payAmount": "Pay Amount",
+      "change": "Change",
+      "paymentContacts": "KBZ Pay / Wave Pay"
     },
     "stock": {
       "description": "Current inventory balance from the warehouse.",
@@ -288,7 +391,9 @@
       "dateTo": "To date",
       "movementHistory": "Restock history",
       "historyDescription": "Manual stock entries added through restock.",
-      "noMovements": "No restock records found.",
+      "viewingBranch": "Showing restock history for {{branch}}.",
+      "noMovements": "No restock records found for this branch.",
+      "noMovementsFiltered": "No restock records match your search or date filters. Try Reset.",
       "searchProduct": "Search product by name or code...",
       "noProductsFound": "No products found.",
       "by": "By"
@@ -355,7 +460,7 @@
     },
     "members": {
       "description": "Manage POS members and customers.",
-      "searchPlaceholder": "Search member...",
+      "searchPlaceholder": "Search by name or phone...",
       "empty": "No members found.",
       "add": "Add member",
       "edit": "Edit member",
@@ -374,6 +479,21 @@
       "deleteTitle": "Delete member",
       "deleteConfirm": "Are you sure you want to delete {{name}}? This action cannot be undone."
     },
+    "outstanding": {
+      "title": "Outstanding balances",
+      "description": "Customers with unpaid completed invoices.",
+      "searchPlaceholder": "Search customer, phone, or invoice...",
+      "empty": "No outstanding balances found.",
+      "orders": "Orders",
+      "paid": "Paid",
+      "totalOutstanding": "Outstanding",
+      "viewOrders": "View orders",
+      "addPayment": "Add payment",
+      "pay": "Pay",
+      "paymentRecorded": "Payment recorded.",
+      "amountGreaterThanZero": "Amount must be greater than zero.",
+      "amountTooHigh": "Amount must not exceed balance due."
+    },
     "reports": {
       "saleDescription": "Aggregated product sales for the selected period.",
       "summaryDescription": "Daily closing summary and cash in hand.",
@@ -383,7 +503,8 @@
       "soldQty": "Sold qty",
       "gross": "Gross",
       "net": "Net",
-      "profit": "Est. profit",
+      "unitCost": "Unit cost",
+      "profit": "Profit",
       "salesSummary": "Sales summary",
       "orderCount": "Orders",
       "expenses": "Expenses",
@@ -405,15 +526,50 @@
       "heroTitle": "Account & store settings",
       "heroText": "Manage passwords, staff access, and product catalog data from one place.",
       "passwordTabDesc": "Update your login password securely.",
+      "shopTabDesc": "Store name, address, and phones printed on receipts.",
       "staffTabDesc": "Create new staff or admin accounts.",
       "loyaltyTabDesc": "Set member points cashback rate (tracking only).",
       "tabs": {
         "password": "Password",
+        "shop": "Shop",
         "staff": "Staff",
         "excel": "Import / Export",
         "loyalty": "Points"
       },
       "excelDescription": "Import or export the product catalog as an Excel file.",
+      "shopName": "Store name",
+      "shopAddress": "Address",
+      "shopPhone": "Phone numbers",
+      "shopPhonePlaceholder": "09-xxx, 09-yyy",
+      "receiptPaperWidth": "Receipt paper width",
+      "receiptPaperWidthOption58": "58 mm (small thermal)",
+      "receiptPaperWidthOption65": "65 mm",
+      "receiptPaperWidthOption80": "80 mm (POS-80C / standard)",
+      "receiptPaperShopDefault": "Shop default ({{width}} mm)",
+      "receiptPaperOptionA4": "A4 (office printer)",
+      "receiptPaperOptionCustom": "Custom width",
+      "receiptPaperCustomWidth": "Custom width (mm)",
+      "receiptPaperDeviceOnlyHint": "This paper size applies to this device only.",
+      "receiptPaperReset": "Reset to shop default",
+      "receiptPaperSetShopDefault": "Set as shop default",
+      "shopDefaultPaperSaved": "Shop default paper width saved.",
+      "receiptPaperWidthHint": "In Chrome print, choose the same paper width, set margins to None, and use black & white.",
+      "shopHint": "Store name, address, and phone appear at the top of printed receipts.",
+      "shopSettingsSaved": "Shop profile saved.",
+      "deviceSettingsSaved": "Device settings saved.",
+      "sections": {
+        "general": "General Settings",
+        "localDevice": "Local Device Settings",
+        "shopInfo": "Additional Shop Information",
+        "featureControl": "General Feature Control Settings"
+      },
+      "roles": {
+        "superAdmin": "Super Admin",
+        "owner": "Owner",
+        "admin": "Admin",
+        "staff": "Staff",
+        "monitor": "Monitor"
+      },
       "pointsCashbackPercent": "Cashback percent",
       "pointsCashbackHint": "Points earned = sale total × percent ÷ 100. Example: 0.1% on 100,000 = 100 points. Not redeemed at checkout.",
       "pointsSettingsSaved": "Points settings saved.",
@@ -448,8 +604,172 @@
       "categoriesLoadError": "Could not load categories. Check that the backend is running.",
       "username": "Username",
       "role": "Role",
+      "allowedDevices": "Allowed devices",
+      "roleAdmin": "Admin",
+      "roleStaff": "Staff",
+      "roleMonitor": "Monitor",
       "createStaff": "Create staff",
       "staffCreated": "Staff account created."
+    },
+    "ownerIntegration": {
+      "title": "Owner API Integration",
+      "description": "Generate an API key for n8n and call read-only report APIs by branch.",
+      "tabApiKey": "API Key",
+      "tabTutorial": "Tutorial",
+      "keySectionTitle": "API key management",
+      "keySectionDescription": "Only one active key is allowed. Regenerating rotates the old key immediately.",
+      "statusLabel": "Key status",
+      "prefixLabel": "Key prefix",
+      "createdAtLabel": "Created at",
+      "lastUsedAtLabel": "Last used at",
+      "notAvailable": "Not available",
+      "neverUsed": "Never used",
+      "status": {
+        "active": "Active",
+        "inactive": "Inactive",
+        "notGenerated": "Not generated yet"
+      },
+      "regenerate": "Generate / rotate key",
+      "confirmRotate": "Rotate API key now? The previous key will stop working immediately.",
+      "keyGeneratedTitle": "New API key generated",
+      "keyGeneratedWarning": "Copy and store this key now. It will not be shown again.",
+      "copyKey": "Copy key",
+      "copied": "Copied",
+      "errorLoad": "Failed to load integration key details.",
+      "guideTitle": "Integration guide (n8n)",
+      "guideDescription": "Step-by-step instructions to pull branch reports into n8n and other tools.",
+      "headersTitle": "Required headers",
+      "exampleBranchIds": "Example branch IDs from your account:",
+      "branchFallback": "Could not load your branch IDs yet. Refresh or sign in again, then replace <branch-id> manually.",
+      "securityTitle": "Security notes",
+      "securityNote1": "Never expose this API key in public repos, screenshots, or chats.",
+      "securityNote2": "If the key may be leaked, rotate immediately to invalidate the old key.",
+      "doc": {
+        "copy": "Copy",
+        "copied": "Copied",
+        "tocTitle": "On this page",
+        "toc": {
+          "overview": "Overview",
+          "prerequisites": "Before you start",
+          "authentication": "Authentication",
+          "endpoints": "API endpoints",
+          "n8n-setup": "n8n: HTTP Request",
+          "n8n-output": "n8n: Read JSON output",
+          "n8n-automation": "n8n: Automate delivery",
+          "security": "Security"
+        },
+        "table": {
+          "paramName": "Parameter",
+          "required": "Required",
+          "description": "Description",
+          "example": "Example",
+          "field": "n8n field",
+          "value": "Value",
+          "yes": "Yes",
+          "no": "No"
+        },
+        "params": {
+          "fromDate": "Start date for the report range (YYYY-MM-DD).",
+          "toDate": "End date for the report range (YYYY-MM-DD).",
+          "branchId": "Branch UUID you can access as owner (one branch per request).",
+          "page": "Page number for list endpoints (default 1).",
+          "limit": "Rows per page for list endpoints (default 20)."
+        },
+        "overview": {
+          "title": "Overview",
+          "body": "Owner API integration lets you call read-only report endpoints with a single API key. Typical use: schedule n8n workflows that fetch sales, cash, or inventory data per branch and send results to Sheets, Telegram, or email."
+        },
+        "prerequisites": {
+          "title": "Before you start",
+          "step1": "Generate an API key on the API Key tab and store it in a password manager or n8n credential.",
+          "step2": "Note your branch IDs (shown below when loaded) — every request must include branchId.",
+          "step3": "Confirm your n8n instance can reach the POS API URL (same host as VITE_API_URL / your deployed backend).",
+          "openApiKeyTab": "Open API Key tab"
+        },
+        "authentication": {
+          "title": "Authentication",
+          "body": "Send your owner integration key on every request. There is no OAuth — the x-api-key header is required.",
+          "apiKeyHeader": "Your generated owner integration key (prefix pos_owner_).",
+          "contentTypeHeader": "Optional; application/json is recommended."
+        },
+        "endpoints": {
+          "title": "API endpoints",
+          "intro": "All routes are GET under /api/integration/reports. Use query parameters; branchId must match a branch you can access.",
+          "sales": {
+            "title": "Sales report",
+            "description": "Product-level sales totals for a date range with pagination.",
+            "responseHint": "Response includes items (rows), summary (totals), and meta (pagination)."
+          },
+          "cashSummary": {
+            "title": "Cash summary",
+            "description": "Sales totals, expenses, payment breakdown, and cash-in-hand for a date range.",
+            "responseHint": "Single JSON object with netSalesTotal, cashInHand, paymentSummary, expenseSummary, etc."
+          },
+          "inventory": {
+            "title": "Inventory balance",
+            "description": "Current stock levels by product for one branch (paginated).",
+            "responseHint": "Response includes items, summary, and meta — same shape pattern as sales."
+          },
+          "summary": {
+            "title": "Summary",
+            "description": "Same data as cash summary (alias route for dashboards).",
+            "responseHint": "Same JSON shape as cash summary."
+          }
+        },
+        "n8n": {
+          "setupTitle": "n8n: Configure HTTP Request",
+          "setupIntro": "Follow these steps in the n8n editor. Use Manual Trigger first to test; add Schedule Trigger later.",
+          "setupSteps": {
+            "step1": "Create a new workflow and add a Manual Trigger node (for testing).",
+            "step2": "Add an HTTP Request node and connect it after the trigger.",
+            "step3": "Open HTTP Request and set the fields in the table below (example uses the sales endpoint).",
+            "step4": "Paste your real API key into the x-api-key header value (use n8n credentials if available).",
+            "step5": "Click Execute workflow (or Test step) and confirm status 200."
+          },
+          "httpRequestTable": {
+            "method": "Method",
+            "url": "URL",
+            "authentication": "Authentication",
+            "authenticationValue": "None (use header below)",
+            "sendQuery": "Send Query Parameters",
+            "sendQueryValue": "ON",
+            "queryParams": "Query parameters",
+            "sendHeaders": "Send Headers",
+            "sendHeadersValue": "ON",
+            "headers": "Header parameters"
+          },
+          "outputTitle": "n8n: Read JSON output",
+          "output": {
+            "step1": "After a successful request, open the HTTP Request node and select the JSON tab in OUTPUT.",
+            "step2": "For sales/inventory, the API returns one item with items, summary, and meta. n8n usually exposes this as a single item — use a Split Out node on items if you need one row per product.",
+            "step3": "Use expressions in the next node to reference fields, e.g. totals from summary or netSalesTotal on cash routes.",
+            "paginatedNote": "List endpoints return { items, summary, meta }. Cash/summary routes return a flat object with netSalesTotal and cashInHand."
+          },
+          "expressions": {
+            "title": "Example expressions (sales row)",
+            "itemExample": "{{ $json.items[0].productName }}\n{{ $json.items[0].netAmount }}",
+            "summaryExample": "{{ $json.summary.netAmount }}\n{{ $json.summary.estimatedProfit }}",
+            "cashExample": "{{ $json.netSalesTotal }}\n{{ $json.cashInHand }}"
+          },
+          "automationTitle": "n8n: Automate delivery",
+          "automation": {
+            "step1": "Replace Manual Trigger with Schedule Trigger (e.g. daily at 9:00) when testing is done.",
+            "step2": "Add Google Sheets Append Row or Telegram Send Message after HTTP Request.",
+            "step3": "Map columns or message text using expressions from the previous step.",
+            "sheetsTitle": "Google Sheets — example column values",
+            "sheetsExample": "Date: {{ $now.format('yyyy-MM-dd') }}\nBranch net sales: {{ $json.netSalesTotal }}\nCash in hand: {{ $json.cashInHand }}",
+            "telegramTitle": "Telegram — example message",
+            "telegramExample": "Daily report\nNet sales: {{ $json.netSalesTotal }}\nOrders: {{ $json.orderCount }}"
+          }
+        },
+        "callout": {
+          "readOnlyTitle": "Read-only access",
+          "readOnlyBody": "Integration APIs cannot create orders, change stock, or modify users. They only return report data for branches linked to your owner account.",
+          "n8nTipTitle": "Tip",
+          "n8nTipBody": "Store the API key in n8n Credentials (Header Auth) instead of plain text in the node when possible.",
+          "securityTitle": "Keep your key safe"
+        }
+      }
     },
     "help": {
       "description": "Get help and support",
@@ -475,11 +795,13 @@
       "numberRequired": "Enter a valid number",
       "minZero": "Must be zero or greater",
       "max100": "Must be 100 or less",
+      "paperWidthRange": "Width must be between 30 and 120 mm",
       "amountMin": "Amount must be at least 1",
       "quantityMin": "Quantity must be at least 1",
       "dateRequired": "Date is required",
       "max64": "Must be 64 characters or less",
-      "max128": "Must be 128 characters or less"
+      "max128": "Must be 128 characters or less",
+      "invalidValue": "Invalid value"
     }
   }
 }

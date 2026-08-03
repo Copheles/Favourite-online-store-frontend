@@ -16,6 +16,7 @@ interface ProductComboboxProps {
   placeholder?: string;
   disabled?: boolean;
   id?: string;
+  branchId?: string;
 }
 
 export function ProductCombobox({
@@ -25,6 +26,7 @@ export function ProductCombobox({
   placeholder,
   disabled,
   id,
+  branchId,
 }: ProductComboboxProps) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
@@ -32,7 +34,7 @@ export function ProductCombobox({
   const debouncedSearch = useDebouncedValue(search, 250);
 
   const query = usePosProducts(
-    { search: debouncedSearch || undefined, page: 1, limit: 20 },
+    { search: debouncedSearch || undefined, page: 1, limit: 20, branchId },
     { enabled: open },
   );
   const products = query.data?.items ?? [];

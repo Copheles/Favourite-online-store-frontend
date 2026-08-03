@@ -68,11 +68,15 @@ export interface OrderCustomer {
 export interface OrderCashier {
   id: string;
   username: string;
+  displayName?: string | null;
   role: string;
 }
 
+export type PaymentStatus = "PAID" | "PARTIAL" | "UNPAID";
+
 export interface OrderListItem {
   id: string;
+  orderNumber: string;
   invoiceNumber: string;
   dailySerial: number;
   customerName: string;
@@ -83,6 +87,9 @@ export interface OrderListItem {
   taxAmount: number;
   netTotal: number;
   paymentType: PaymentType | null;
+  paidTotal?: number;
+  balanceDue?: number;
+  paymentStatus?: PaymentStatus;
   status: OrderStatus;
   notes: string | null;
   orderDate: string;
@@ -105,6 +112,7 @@ export interface OrderPayment {
   paymentType: PaymentType;
   paidAmount: number;
   changeAmount: number;
+  note?: string | null;
   createdAt: string;
 }
 
@@ -119,6 +127,7 @@ export interface OrderTotals {
 
 export interface OrderDetail {
   id: string;
+  orderNumber: string;
   invoiceNumber: string;
   dailySerial?: number;
   date?: string;
@@ -137,22 +146,59 @@ export interface OrderDetail {
   deliveryFee?: number;
   taxAmount?: number;
   netTotal?: number;
+  paidTotal?: number;
+  balanceDue?: number;
+  paymentStatus?: PaymentStatus;
   notes: string | null;
   status: OrderStatus;
 }
 
+export interface OutstandingOrder {
+  id: string;
+  invoiceNumber: string;
+  netTotal: number;
+  paidTotal: number;
+  refundedTotal: number;
+  balanceDue: number;
+  createdAt: string;
+}
+
+export interface OutstandingItem {
+  customer: {
+    id: string;
+    name: string;
+    phone: string | null;
+  };
+  order: OutstandingOrder;
+}
+
+export interface AddOrderPaymentInput {
+  paymentType: PaymentType;
+  paidAmount: number;
+  note?: string | null;
+}
+
 export interface OrderReceipt {
-  shopInfo: { name: string; address: string | null; phone: string | null };
+  shopInfo: {
+    name: string;
+    address: string | null;
+    phone: string | null;
+    receiptPaperWidthMm?: number;
+  };
+  orderId: string;
+  orderNumber?: string;
   invoiceNumber: string;
   dailySerial?: number;
   date: string;
   cashier?: OrderCashier | string | null;
   customer: OrderCustomer;
+  isWalkIn?: boolean;
   items: Array<{
     productName: string;
     productCode: string;
     unitPrice: number;
     discount: number;
+    unitPriceAfterDiscount: number;
     quantity: number;
     totalAmount: number;
   }>;

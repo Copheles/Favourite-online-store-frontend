@@ -87,6 +87,10 @@ function buildBreadcrumbs(
     },
     "/expenses": { labelKey: "pos.modules.expenses", parent: "/dashboard" },
     "/customers": { labelKey: "sidebar.menu.customers", parent: "/dashboard" },
+    "/customers/outstanding": {
+      labelKey: "sidebar.menu.outstanding",
+      parent: "/customers",
+    },
     "/reports/sale": {
       labelKey: "pos.modules.saleReport",
       parent: "/dashboard",
@@ -95,8 +99,20 @@ function buildBreadcrumbs(
       labelKey: "pos.modules.summaryReport",
       parent: "/dashboard",
     },
+    "/owner/integration": {
+      labelKey: "pos.modules.ownerIntegration",
+      parent: "/dashboard",
+    },
     "/settings": { labelKey: "sidebar.menu.settings", parent: "/dashboard" },
     "/help": { labelKey: "sidebar.menu.helpCenter", parent: "/dashboard" },
+    "/users": {
+      labelKey: "sidebar.menu.userManagement",
+      parent: "/dashboard",
+    },
+    "/branches": {
+      labelKey: "sidebar.menu.branchManagement",
+      parent: "/dashboard",
+    },
   };
 
   const current = routeMap[pathname];

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useTranslation } from "react-i18next";
@@ -45,7 +45,7 @@ export function RestockModal({
 }: RestockModalProps) {
   const { t } = useTranslation();
   const mutation = useStockMovementMutation();
-  const { accessibleBranches, defaultBranchId } = useBranch();
+  const { accessibleBranches, defaultBranchId, currentBranchId } = useBranch();
   const [selectedLabel, setSelectedLabel] = useState(
     initialProduct ? `${initialProduct.name} (${initialProduct.code})` : "",
   );
@@ -68,7 +68,7 @@ export function RestockModal({
     resolver: zodResolver(schema),
     defaultValues: {
       productId: initialProduct?.productId ?? "",
-      branchId: defaultBranchId ?? accessibleBranches[0]?.id ?? "",
+      branchId: currentBranchId ?? defaultBranchId ?? accessibleBranches[0]?.id ?? "",
       type: "IN",
       quantity: 1,
       buyPrice: null,
@@ -76,6 +76,17 @@ export function RestockModal({
       note: "",
     },
   });
+
+  const formBranchId = form.watch("branchId");
+  const prevBranchRef = useRef(formBranchId);
+
+  useEffect(() => {
+    if (initialProduct) return;
+    if (prevBranchRef.current === formBranchId) return;
+    prevBranchRef.current = formBranchId;
+    form.setValue("productId", "");
+    setSelectedLabel("");
+  }, [formBranchId, form, initialProduct]);
 
   function onSubmit(values: StockMovementFormValues) {
     mutation.mutate(
@@ -130,6 +141,7 @@ export function RestockModal({
                   <ProductCombobox
                     value={field.value}
                     selectedLabel={selectedLabel}
+                    branchId={formBranchId}
                     disabled={Boolean(initialProduct)}
                     onChange={(productId, product) => {
                       field.onChange(productId);
