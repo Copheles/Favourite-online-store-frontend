@@ -18,6 +18,7 @@ export interface CategoryRef {
 }
 
 export type StockStatus = "IN_STOCK" | "LOW_STOCK" | "OUT_OF_STOCK";
+export type DisplayStockStatus = StockStatus | "NEGATIVE_STOCK";
 export type PaymentType = "CASH" | "KBZPAY" | "WAVEPAY" | "CARD" | "BANKING";
 export type OrderStatus = "COMPLETED" | "PROCESSING" | "CANCELLED";
 export type ProductType = "STOCK_CONTROL" | "NO_STOCK_CONTROL";
@@ -347,6 +348,10 @@ export interface ProductExcelImportSummary {
   createdProducts: number;
   updatedProducts: number;
   stockQtyAdjusted: number;
+  openingMovementsPlanned: number;
+  openingMovementsCreated: number;
+  negativeQtyRows: number;
+  buyPriceResolvedRows: number;
   skippedRows: number;
   errors: Record<string, string[]>;
   warnings: Record<string, string[]>;

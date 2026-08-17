@@ -12,13 +12,12 @@ import { FormSelect } from "@/components/forms/FormSelect";
 import { PosPageShell } from "@/components/shared/pos/PosPageShell";
 import { SettingsAccordionSection } from "@/components/settings/SettingsAccordionSection";
 import { SettingsToolbar } from "@/components/settings/SettingsToolbar";
+import { ProductExcelPanel } from "@/components/forms/ProductExcelPanel";
 import { getStoreSettings, updateStoreSettings } from "@/apis/settings.api";
 import { useAuth } from "@/hooks/useAuth";
 import { useAdminMutations } from "@/hooks/useAdmin";
 import { useReceiptPrintSettings } from "@/hooks/useReceiptPrintSettings";
-import {
-  FALLBACK_PAPER_WIDTH_MM,
-} from "@/lib/printSettingsStorage";
+import { FALLBACK_PAPER_WIDTH_MM } from "@/lib/printSettingsStorage";
 import {
   formValuesToSetting,
   settingToFormValues,
@@ -41,7 +40,8 @@ type SettingsSectionId =
   | "general"
   | "localDevice"
   | "shopInfo"
-  | "featureControl";
+  | "featureControl"
+  | "excelImport";
 
 function SuccessNote({ message }: { message: string }) {
   return (
@@ -53,7 +53,7 @@ function SuccessNote({ message }: { message: string }) {
 }
 
 export function SettingsPage() {
-  const { hasStoreOperatorAccess } = useAuth();
+  const { hasStoreOperatorAccess, isSuperAdmin } = useAuth();
   const [openSections, setOpenSections] = useState<
     Record<SettingsSectionId, boolean>
   >({
@@ -61,14 +61,12 @@ export function SettingsPage() {
     localDevice: false,
     shopInfo: false,
     featureControl: false,
+    excelImport: false,
   });
 
-  const setSectionOpen = useCallback(
-    (id: SettingsSectionId, open: boolean) => {
-      setOpenSections((prev) => ({ ...prev, [id]: open }));
-    },
-    [],
-  );
+  const setSectionOpen = useCallback((id: SettingsSectionId, open: boolean) => {
+    setOpenSections((prev) => ({ ...prev, [id]: open }));
+  }, []);
 
   const openSection = useCallback((id: SettingsSectionId) => {
     setOpenSections((prev) => ({ ...prev, [id]: true }));
@@ -104,6 +102,13 @@ export function SettingsPage() {
                 onOpenChange={(open) => setSectionOpen("featureControl", open)}
               />
             </>
+          )}
+
+          {isSuperAdmin && (
+            <ExcelImportSettingsSection
+              open={openSections.excelImport}
+              onOpenChange={(open) => setSectionOpen("excelImport", open)}
+            />
           )}
         </div>
       </div>
@@ -449,6 +454,29 @@ function FeatureControlSettingsSection({
           </div>
         </form>
       </Form>
+    </SettingsAccordionSection>
+  );
+}
+
+function ExcelImportSettingsSection({
+  open,
+  onOpenChange,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
+  const { t } = useTranslation();
+
+  return (
+    <SettingsAccordionSection
+      title={t("pos.settings.sections.excelImport")}
+      open={open}
+      onOpenChange={onOpenChange}
+    >
+      <p className="mb-3 text-sm text-muted-foreground">
+        {t("pos.settings.excelImportDescription")}
+      </p>
+      <ProductExcelPanel />
     </SettingsAccordionSection>
   );
 }

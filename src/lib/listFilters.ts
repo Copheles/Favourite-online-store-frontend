@@ -1,4 +1,4 @@
-import type { OrderStatus, PaymentType, StockStatus } from "@/types/api";
+import type { DisplayStockStatus, OrderStatus, PaymentType, StockStatus } from "@/types/api";
 
 export type StockStatusFilter = "ALL" | StockStatus;
 
@@ -61,7 +61,8 @@ export function orderStatusFilterToApi(
   return value === "ALL" ? undefined : value;
 }
 
-export function getStockStatusFromQty(stockQty: number): StockStatus {
+export function getStockStatusFromQty(stockQty: number): DisplayStockStatus {
+  if (stockQty < 0) return "NEGATIVE_STOCK";
   if (stockQty <= 0) return "OUT_OF_STOCK";
   if (stockQty <= 5) return "LOW_STOCK";
   return "IN_STOCK";

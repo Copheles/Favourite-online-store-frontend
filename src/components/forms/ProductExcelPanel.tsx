@@ -174,13 +174,29 @@ export function ProductExcelPanel({
             )}
           </div>
 
-          <div className="mt-3 grid gap-2 sm:grid-cols-3 lg:grid-cols-6">
+          <div className="mt-3 grid gap-2 sm:grid-cols-3 lg:grid-cols-4">
             <Stat label={t("pos.excel.stats.categories")} value={summary.createdCategories} />
             <Stat label={t("pos.excel.stats.created")} value={summary.createdProducts} />
             <Stat label={t("pos.excel.stats.updated")} value={summary.updatedProducts} />
             <Stat
               label={t("pos.excel.stats.stockMoves")}
               value={summary.stockQtyAdjusted}
+            />
+            <Stat
+              label={t("pos.excel.stats.openingMovements")}
+              value={
+                summary.dryRun
+                  ? summary.openingMovementsPlanned
+                  : summary.openingMovementsCreated
+              }
+            />
+            <Stat
+              label={t("pos.excel.stats.negativeQty")}
+              value={summary.negativeQtyRows}
+            />
+            <Stat
+              label={t("pos.excel.stats.buyPriceResolved")}
+              value={summary.buyPriceResolvedRows}
             />
             <Stat label={t("pos.excel.stats.skipped")} value={summary.skippedRows} />
           </div>

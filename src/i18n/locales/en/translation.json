@@ -209,7 +209,8 @@
         "ALL": "All",
         "IN_STOCK": "In stock",
         "LOW_STOCK": "Low stock",
-        "OUT_OF_STOCK": "Out of stock"
+        "OUT_OF_STOCK": "Out of stock",
+        "NEGATIVE_STOCK": "Negative stock"
       },
       "contact": {
         "ALL": "All",
@@ -426,7 +427,7 @@
       "export": "Export Excel",
       "checking": "Checking file...",
       "exporting": "Exporting...",
-      "hint": "Use .xlsx files only. Export current products to get the correct template. Data rows start at row 10.",
+      "hint": "Super admin only. Use .xlsx TARA stock reports. Dry-run first, then apply. Negative qty is stored on your default branch; POS still blocks sales at zero or below.",
       "checked": "Excel file checked — review the summary, then apply import.",
       "completed": "Excel import completed.",
       "validationFailed": "Fix the errors below before importing.",
@@ -444,6 +445,9 @@
         "created": "Created",
         "updated": "Updated",
         "stockMoves": "Stock qty updated",
+        "openingMovements": "Opening buy layers",
+        "negativeQty": "Negative qty rows",
+        "buyPriceResolved": "Buy price resolved",
         "skipped": "Skipped"
       }
     },
@@ -537,6 +541,7 @@
         "loyalty": "Points"
       },
       "excelDescription": "Import or export the product catalog as an Excel file.",
+      "excelImportDescription": "Import TARA Excel into your default branch (Branch A). Sets stock qty, sell price, categories, and opening buy price for FIFO.",
       "shopName": "Store name",
       "shopAddress": "Address",
       "shopPhone": "Phone numbers",
@@ -561,7 +566,8 @@
         "general": "General Settings",
         "localDevice": "Local Device Settings",
         "shopInfo": "Additional Shop Information",
-        "featureControl": "General Feature Control Settings"
+        "featureControl": "General Feature Control Settings",
+        "excelImport": "Excel Import (Super Admin)"
       },
       "roles": {
         "superAdmin": "Super Admin",
