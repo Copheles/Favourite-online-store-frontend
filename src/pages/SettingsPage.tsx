@@ -14,7 +14,9 @@ import { SettingsAccordionSection } from "@/components/settings/SettingsAccordio
 import { SettingsToolbar } from "@/components/settings/SettingsToolbar";
 import { ProductExcelPanel } from "@/components/forms/ProductExcelPanel";
 import { getStoreSettings, updateStoreSettings } from "@/apis/settings.api";
+import { updateCurrentBranchShopInfo } from "@/apis/branch.api";
 import { useAuth } from "@/hooks/useAuth";
+import { useBranch } from "@/hooks/useBranch";
 import { useAdminMutations } from "@/hooks/useAdmin";
 import { useReceiptPrintSettings } from "@/hooks/useReceiptPrintSettings";
 import { FALLBACK_PAPER_WIDTH_MM } from "@/lib/printSettingsStorage";
@@ -23,8 +25,11 @@ import {
   settingToFormValues,
 } from "@/lib/receiptPaperSettingsForm";
 import { queryKeys } from "@/lib/queryKeys";
+import { useAppDispatch } from "@/redux/hooks";
+import { updateBranchDetails } from "@/redux/slices/branchSlice";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+  getBranchShopSettingsSchema,
   getPasswordSchema,
   getPointsSettingsSchema,
   getReceiptPaperSchema,
@@ -33,12 +38,14 @@ import {
   type PasswordFormValues,
   type PointsSettingsFormValues,
   type ReceiptPaperFormValues,
+  type BranchShopSettingsFormValues,
   type ShopSettingsFormValues,
 } from "@/validation/settings.validation";
 
 type SettingsSectionId =
   | "general"
   | "localDevice"
+  | "branchReceiptInfo"
   | "shopInfo"
   | "featureControl"
   | "excelImport";
@@ -59,6 +66,7 @@ export function SettingsPage() {
   >({
     general: false,
     localDevice: false,
+    branchReceiptInfo: false,
     shopInfo: false,
     featureControl: false,
     excelImport: false,
@@ -92,6 +100,10 @@ export function SettingsPage() {
               <LocalDeviceSettingsSection
                 open={openSections.localDevice}
                 onOpenChange={(open) => setSectionOpen("localDevice", open)}
+              />
+              <BranchReceiptInfoSettingsSection
+                open={openSections.branchReceiptInfo}
+                onOpenChange={(open) => setSectionOpen("branchReceiptInfo", open)}
               />
               <ShopInfoSettingsSection
                 open={openSections.shopInfo}
@@ -292,6 +304,92 @@ function LocalDeviceSettingsSection({
               </Button>
             )}
             <Button type="submit">{t("pos.common.save")}</Button>
+          </div>
+        </form>
+      </Form>
+    </SettingsAccordionSection>
+  );
+}
+
+function BranchReceiptInfoSettingsSection({
+  open,
+  onOpenChange,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
+  const { t } = useTranslation();
+  const dispatch = useAppDispatch();
+  const queryClient = useQueryClient();
+  const { currentBranch } = useBranch();
+  const schema = useMemo(() => getBranchShopSettingsSchema(t), [t]);
+
+  const form = useForm<BranchShopSettingsFormValues>({
+    resolver: zodResolver(schema),
+    values: {
+      name: currentBranch?.name ?? "",
+      address: currentBranch?.address ?? "",
+      phone: currentBranch?.phone ?? "",
+    },
+  });
+
+  const mutation = useMutation({
+    mutationFn: updateCurrentBranchShopInfo,
+    onSuccess: (branch) => {
+      dispatch(updateBranchDetails(branch));
+      queryClient.invalidateQueries({ queryKey: queryKeys.branches.accessible() });
+    },
+  });
+
+  return (
+    <SettingsAccordionSection
+      title={t("pos.settings.sections.branchReceiptInfo")}
+      open={open}
+      onOpenChange={onOpenChange}
+    >
+      <Form {...form}>
+        <form
+          onSubmit={form.handleSubmit((values) => mutation.mutate(values))}
+          className="mx-auto max-w-md space-y-3"
+        >
+          {currentBranch?.code ? (
+            <p className="text-sm text-muted-foreground">
+              {t("pos.settings.branchReceiptBranchLabel", {
+                code: currentBranch.code,
+              })}
+            </p>
+          ) : null}
+          <FormTextField
+            control={form.control}
+            name="name"
+            label={t("pos.settings.shopName")}
+          />
+          <FormTextareaField
+            control={form.control}
+            name="address"
+            label={t("pos.settings.shopAddress")}
+            rows={3}
+          />
+          <FormTextField
+            control={form.control}
+            name="phone"
+            label={t("pos.settings.shopPhone")}
+            placeholder={t("pos.settings.shopPhonePlaceholder")}
+          />
+          <p className="text-xs text-muted-foreground">
+            {t("pos.settings.branchReceiptHint")}
+          </p>
+          {mutation.isSuccess && (
+            <SuccessNote message={t("pos.settings.branchReceiptSaved")} />
+          )}
+          <ApiErrorAlert error={mutation.error} />
+          <div className="flex justify-end pt-1">
+            <Button
+              type="submit"
+              disabled={mutation.isPending || !currentBranch}
+            >
+              {t("pos.common.save")}
+            </Button>
           </div>
         </form>
       </Form>

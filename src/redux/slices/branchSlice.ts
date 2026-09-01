@@ -30,6 +30,14 @@ const branchSlice = createSlice({
         state.currentBranchId = action.payload;
       }
     },
+    updateBranchDetails: (state, action: PayloadAction<Branch>) => {
+      const index = state.accessibleBranches.findIndex(
+        (branch) => branch.id === action.payload.id,
+      );
+      if (index >= 0) {
+        state.accessibleBranches[index] = action.payload;
+      }
+    },
     clearBranches: (state) => {
       state.currentBranchId = null;
       state.accessibleBranches = [];
@@ -37,5 +45,5 @@ const branchSlice = createSlice({
   },
 });
 
-export const { setBranches, switchBranch, clearBranches } = branchSlice.actions;
+export const { setBranches, switchBranch, updateBranchDetails, clearBranches } = branchSlice.actions;
 export default branchSlice.reducer;

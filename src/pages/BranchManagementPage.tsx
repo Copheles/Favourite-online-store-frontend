@@ -201,6 +201,9 @@ function CreateBranchModal({
             label={t("pos.branches.address")}
           />
           <FormTextField control={form.control} name="phone" label={t("pos.branches.phone")} />
+          <p className="text-xs text-muted-foreground">
+            {t("pos.branches.receiptFieldsHint")}
+          </p>
           <ApiErrorAlert error={mutation.error} />
           <div className="flex justify-end gap-2 pt-2">
             <Button type="button" variant="outline" onClick={onClose}>
@@ -287,6 +290,9 @@ function EditBranchModal({
             label={t("pos.branches.address")}
           />
           <FormTextField control={form.control} name="phone" label={t("pos.branches.phone")} />
+          <p className="text-xs text-muted-foreground">
+            {t("pos.branches.receiptFieldsHint")}
+          </p>
           <FormSelect
             control={form.control}
             name="isActive"

@@ -137,6 +137,20 @@ export type ShopSettingsFormValues = z.infer<
   ReturnType<typeof getShopSettingsSchema>
 >;
 
+export const getBranchShopSettingsSchema = (t: (key: string) => string) =>
+  z.object({
+    name: z
+      .string()
+      .min(1, t("pos.validation.nameRequired"))
+      .max(128, t("pos.validation.max128")),
+    address: z.string().max(256, t("pos.validation.max128")).optional().or(z.literal("")),
+    phone: z.string().max(64, t("pos.validation.max64")).optional().or(z.literal("")),
+  });
+
+export type BranchShopSettingsFormValues = z.infer<
+  ReturnType<typeof getBranchShopSettingsSchema>
+>;
+
 export const productFormDefaults: ProductFormValues = {
   name: "",
   code: "",

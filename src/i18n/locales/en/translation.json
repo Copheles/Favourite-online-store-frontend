@@ -165,7 +165,7 @@
       "revokeDescription": "This will log out \"{{device}}\" immediately. The user can sign in again if a device slot is available."
     },
     "branches": {
-      "description": "Create branches and manage branch names, contact details, and active status.",
+      "description": "Create branches and manage branch names, contact details, and active status. Name, address, and phone appear on that branch's printed vouchers.",
       "add": "Add branch",
       "loadError": "Failed to load branches.",
       "empty": "No branches found.",
@@ -177,7 +177,8 @@
       "phone": "Phone",
       "createTitle": "Create branch",
       "createSubmit": "Create branch",
-      "editTitle": "Edit {{name}}"
+      "editTitle": "Edit {{name}}",
+      "receiptFieldsHint": "Name, address, and phone appear on printed vouchers for this branch."
     },
     "pages": {
       "comingSoon": "This module is coming soon.",
@@ -584,13 +585,17 @@
       "receiptPaperSetShopDefault": "Set as shop default",
       "shopDefaultPaperSaved": "Shop default paper width saved.",
       "receiptPaperWidthHint": "In Chrome print, choose the same paper width, set margins to None, and use black & white.",
-      "shopHint": "Store name, address, and phone appear at the top of printed receipts.",
+      "shopHint": "Used on printed receipts when this branch has no name, address, or phone set above.",
+      "branchReceiptHint": "These appear on vouchers for this branch. Empty fields use the default receipt info below.",
+      "branchReceiptSaved": "Branch receipt info saved.",
+      "branchReceiptBranchLabel": "Branch: {{code}}",
       "shopSettingsSaved": "Shop profile saved.",
       "deviceSettingsSaved": "Device settings saved.",
       "sections": {
         "general": "General Settings",
         "localDevice": "Local Device Settings",
-        "shopInfo": "Additional Shop Information",
+        "branchReceiptInfo": "Receipt info (this branch)",
+        "shopInfo": "Default receipt info",
         "featureControl": "General Feature Control Settings",
         "excelImport": "Excel Import (Super Admin)"
       },
