@@ -149,11 +149,8 @@ export function SalePage() {
       cartRef.current = lines;
       setCart(lines);
 
-      if (result === "max_stock") {
-        showToast(
-          "warning",
-          t("pos.sale.maxStockReached", { name: product.name }),
-        );
+      if (result === "unchanged") {
+        return;
       }
     },
     [canWrite, t, showToast],
@@ -171,29 +168,17 @@ export function SalePage() {
   );
 
   function updateQty(productId: string, delta: number) {
-    let maxStockProductName: string | null = null;
     const nextCart = cartRef.current
       .map((line) => {
         if (line.product.productId !== productId) return line;
         const nextQty = line.quantity + delta;
         if (nextQty <= 0) return null;
-        if (nextQty > line.product.stockQty) {
-          maxStockProductName = line.product.name;
-          return line;
-        }
         return { ...line, quantity: nextQty };
       })
       .filter(Boolean) as CartLine[];
 
     cartRef.current = nextCart;
     setCart(nextCart);
-
-    if (maxStockProductName) {
-      showToast(
-        "warning",
-        t("pos.sale.maxStockReached", { name: maxStockProductName }),
-      );
-    }
   }
 
   function removeLine(productId: string) {
@@ -723,7 +708,6 @@ function CartItemEditModal({
   }) => void;
 }) {
   const { t } = useTranslation();
-  const maxQty = line.product.stockQty;
   const [quantity, setQuantity] = useState(String(line.quantity));
   const [unitPrice, setUnitPrice] = useState(String(getUnitPrice(line)));
   const [discount, setDiscount] = useState(String(getLineDiscount(line)));
@@ -735,9 +719,7 @@ function CartItemEditModal({
   const qtyError =
     !Number.isFinite(qtyNum) || qtyNum < 1
       ? t("pos.sale.editQtyMin")
-      : qtyNum > maxQty
-        ? t("pos.sale.maxStockReached", { name: line.product.name })
-        : null;
+      : null;
   const priceError =
     !Number.isFinite(priceNum) || priceNum < 0
       ? t("pos.validation.minZero")
@@ -777,7 +759,6 @@ function CartItemEditModal({
           <Input
             type="number"
             min={1}
-            max={maxQty}
             value={quantity}
             onChange={(e) => setQuantity(e.target.value)}
             autoFocus

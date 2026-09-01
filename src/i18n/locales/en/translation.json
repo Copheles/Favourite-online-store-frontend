@@ -361,7 +361,32 @@
       "netTotal": "Net Total",
       "payAmount": "Pay Amount",
       "change": "Change",
-      "paymentContacts": "KBZ Pay / Wave Pay"
+      "paymentContacts": "KBZ Pay / Wave Pay",
+      "exchange": {
+        "title": "Edit order",
+        "button": "Edit",
+        "orderItems": "Order items",
+        "orderItemsHint": "Change quantity, price, remove items, or add new products.",
+        "addProduct": "Add product to order...",
+        "emptyItems": "All items removed. Add new products below.",
+        "originalQty": "Originally {{qty}}",
+        "newBadge": "New item",
+        "settlement": "Settlement",
+        "returnCredit": "Return credit",
+        "newItemsTotal": "New items total",
+        "amountDue": "Amount due",
+        "submit": "Save changes",
+        "successToast": "Order updated.",
+        "itemsRequired": "Add at least one item to the order.",
+        "noChanges": "Change at least one item before submitting.",
+        "sourceCustomer": "Original order customer: {{name}}",
+        "invalidReturnQty": "Quantity cannot be negative.",
+        "customerRequiredForRefund": "A customer is required when return value exceeds new items total.",
+        "customerRequiredForCredit": "Select a customer for partial payment (credit sale).",
+        "invalidPaidAmount": "Paid amount must be zero or greater.",
+        "paidRequired": "Enter payment when amount due is greater than zero.",
+        "refundDue": "Customer refund due (handle cash offline): {{amount}}"
+      }
     },
     "stock": {
       "description": "Current inventory balance from the warehouse.",

@@ -2,6 +2,7 @@ import { axiosClient } from "@/lib/axios";
 import { toQueryString } from "@/lib/queryParams";
 import type {
   AddOrderPaymentInput,
+  ExchangeOrderInput,
   OrderDetail,
   OrderListItem,
   OrderReceipt,
@@ -61,6 +62,17 @@ export async function addOrderPayment(
 ): Promise<OrderDetail> {
   const { data } = await axiosClient.post<OrderDetail>(
     `/api/orders/${id}/payments`,
+    input,
+  );
+  return data;
+}
+
+export async function exchangeOrder(
+  id: string,
+  input: ExchangeOrderInput,
+): Promise<OrderDetail> {
+  const { data } = await axiosClient.post<OrderDetail>(
+    `/api/orders/${id}/exchange`,
     input,
   );
   return data;

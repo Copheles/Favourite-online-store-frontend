@@ -110,6 +110,16 @@ export function ReceiptTicket({
             Cashier : {getOrderCashierName(receipt.cashier)}
           </span>
         </div>
+        <div className="receipt-meta-pair">
+          <span className="receipt-meta-cell">
+            Customer : {receipt.customer.name}
+          </span>
+          {receipt.customer.phone ? (
+            <span className="receipt-meta-cell receipt-meta-right">
+              Tel : {receipt.customer.phone}
+            </span>
+          ) : null}
+        </div>
         <div className="receipt-meta-pair receipt-meta-emphasis">
           <span className="receipt-order-time">
             {formatReceiptDateTime(receipt.date)}

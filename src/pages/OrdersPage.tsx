@@ -35,11 +35,13 @@ import { PosToaster, usePosToast } from "@/components/shared/pos/PosToast";
 import { PosToolbar, PosToolbarActions, PosToolbarGroup } from "@/components/shared/pos/PosToolbar";
 import { TableSkeleton } from "@/components/shared/pos/TableSkeleton";
 import { OrderStatusBadge } from "@/components/shared/pos/OrderStatusBadge";
+import { ExchangeOrderModal } from "@/components/forms/ExchangeOrderModal";
 import { ReceiptTicket } from "@/components/receipt/ReceiptTicket";
 import { useUrlEnumParam, useUrlLimit, useUrlPage } from "@/hooks/useUrlQuery";
 import { useAuth } from "@/hooks/useAuth";
 import {
   useAddOrderPayment,
+  useExchangeOrder,
   useOrder,
   useOrderReceipt,
   useOrders,
@@ -83,7 +85,7 @@ const PAYMENT_OPTIONS: PaymentType[] = [
 
 export function OrdersPage() {
   const { t } = useTranslation();
-  const { canWrite } = useAuth();
+  const { canWrite, hasStoreOperatorAccess } = useAuth();
   const location = useLocation();
   const isHistory = location.pathname.includes("/completed");
   const isPending = location.pathname.includes("/pending");
@@ -95,6 +97,7 @@ export function OrdersPage() {
   const { toasts, showToast, dismiss } = usePosToast();
   const updateStatus = useUpdateOrderStatus();
   const addPaymentMutation = useAddOrderPayment();
+  const exchangeMutation = useExchangeOrder();
   const [page, setPage] = useUrlPage();
   const [limit, setLimit] = useUrlLimit(
     PAGE_SIZE.default,
@@ -118,6 +121,7 @@ export function OrdersPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [showReceipt, setShowReceipt] = useState(false);
   const [paymentTarget, setPaymentTarget] = useState<OrderDetail | null>(null);
+  const [exchangeOrderId, setExchangeOrderId] = useState<string | null>(null);
   const prevModeRef = useRef(mode);
 
   const appliedSearch = readUrlString(searchParams, "q");
@@ -166,6 +170,7 @@ export function OrdersPage() {
   });
 
   const detailQuery = useOrder(selectedId);
+  const exchangeDetailQuery = useOrder(exchangeOrderId);
   const receiptQuery = useOrderReceipt(showReceipt ? selectedId : null);
 
   const title = isPending
@@ -201,7 +206,7 @@ export function OrdersPage() {
   function renderRowActions(row: OrderListItem) {
     return (
       <>
-        {canWrite && row.status === "PROCESSING" && (
+        {hasStoreOperatorAccess && row.status === "PROCESSING" && (
           <>
             <Button
               size="sm"
@@ -210,6 +215,26 @@ export function OrdersPage() {
               onClick={() => handleComplete(row.id)}
             >
               {t("pos.orders.complete")}
+            </Button>
+            <Button
+              size="sm"
+              variant="destructive"
+              disabled={updateStatus.isPending}
+              onClick={() => handleCancel(row.id)}
+            >
+              {t("pos.orders.cancel")}
+            </Button>
+          </>
+        )}
+        {hasStoreOperatorAccess && row.status === "COMPLETED" && isHistory && (
+          <>
+            <Button
+              size="sm"
+              variant="secondary"
+              disabled={exchangeMutation.isPending}
+              onClick={() => setExchangeOrderId(row.id)}
+            >
+              {t("pos.orders.exchange.button")}
             </Button>
             <Button
               size="sm"
@@ -526,6 +551,26 @@ export function OrdersPage() {
           wide
         >
           <OrderDetailView order={detailQuery.data} />
+          {hasStoreOperatorAccess && detailQuery.data.status === "COMPLETED" && isHistory && (
+            <div className="mt-4 flex flex-wrap gap-2">
+              <Button
+                type="button"
+                variant="secondary"
+                disabled={exchangeMutation.isPending}
+                onClick={() => setExchangeOrderId(detailQuery.data.id)}
+              >
+                {t("pos.orders.exchange.button")}
+              </Button>
+              <Button
+                type="button"
+                variant="destructive"
+                disabled={updateStatus.isPending}
+                onClick={() => handleCancel(detailQuery.data.id)}
+              >
+                {t("pos.orders.cancel")}
+              </Button>
+            </div>
+          )}
           {canWrite &&
             detailQuery.data.status !== "CANCELLED" &&
             toMoney(detailQuery.data.balanceDue) > 0 && (
@@ -577,6 +622,26 @@ export function OrdersPage() {
                 onSuccess: (order) => {
                   showToast("success", t("pos.outstanding.paymentRecorded"));
                   setPaymentTarget(null);
+                  setSelectedId(order.id);
+                },
+              },
+            )
+          }
+        />
+      )}
+
+      {exchangeOrderId && exchangeDetailQuery.data && (
+        <ExchangeOrderModal
+          order={exchangeDetailQuery.data}
+          saving={exchangeMutation.isPending}
+          onClose={() => setExchangeOrderId(null)}
+          onSubmit={(input) =>
+            exchangeMutation.mutate(
+              { id: exchangeOrderId, input },
+              {
+                onSuccess: (order) => {
+                  showToast("success", t("pos.orders.exchange.successToast"));
+                  setExchangeOrderId(null);
                   setSelectedId(order.id);
                 },
               },

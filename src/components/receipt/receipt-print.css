@@ -194,6 +194,14 @@
 }
 
 @media print {
+  html,
+  body {
+    width: var(--receipt-paper-width, 58mm) !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #fff !important;
+  }
+
   body * {
     visibility: hidden !important;
   }
@@ -201,6 +209,10 @@
   #receipt-print,
   #receipt-print * {
     visibility: visible !important;
+    color: #000 !important;
+    opacity: 1 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
 
   #receipt-print {
@@ -221,11 +233,55 @@
     max-width: var(--receipt-paper-width, 58mm);
     width: var(--receipt-paper-width, 58mm);
     padding: 1mm 1.5mm 2mm;
+    font-size: 10.5px;
+    -webkit-font-smoothing: none;
+    font-smoothing: none;
+    text-rendering: geometricPrecision;
+  }
+
+  .receipt-shop-name {
+    font-size: 12px;
+  }
+
+  .receipt-shop-line,
+  .receipt-meta,
+  .receipt-items {
+    font-size: 9.5px;
+  }
+
+  .receipt-items th,
+  .receipt-items td,
+  .receipt-total-row,
+  .receipt-pay-block {
+    font-weight: 700;
+  }
+
+  .receipt-order-time {
+    font-size: 13px;
+  }
+
+  .receipt-serial {
+    font-size: 17px;
+  }
+
+  .receipt-total-row.strong {
+    font-size: 12px;
+    font-weight: 900;
+  }
+
+  .receipt-policy,
+  .receipt-footer-line {
+    font-size: 8.5px;
+    font-weight: 600;
   }
 
   .receipt-logo {
-    filter: grayscale(1) contrast(1.55);
+    filter: none;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
+  }
+
+  .receipt-divider {
+    border-top-width: 1.5px;
   }
 }

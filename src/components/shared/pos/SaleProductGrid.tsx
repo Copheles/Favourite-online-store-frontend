@@ -325,12 +325,16 @@ const SaleProductCard = memo(function SaleProductCard({
   onAdd: (product: PosProduct) => void;
 }) {
   const { t } = useTranslation();
-  const inStock = product.isSellable;
-  const lowStock = inStock && product.stockQty <= 5;
+  const lowStock = product.stockQty > 0 && product.stockQty <= 5;
+  const stockWarning = product.stockQty <= 0;
 
-  const stockLabel = !inStock
-    ? t("pos.sale.outOfStock")
-    : t("pos.sale.stockLeft", { count: product.stockQty });
+  const stockLabel = stockWarning
+    ? product.stockQty < 0
+      ? t("pos.filters.stock.NEGATIVE_STOCK")
+      : t("pos.sale.outOfStock")
+    : lowStock
+      ? t("pos.sale.stockLeft", { count: product.stockQty })
+      : t("pos.sale.stockLeft", { count: product.stockQty });
 
   const priceClassName =
     "truncate text-sm font-semibold tabular-nums tracking-tight sm:text-base lg:text-[15px] xl:text-[17px] 2xl:text-lg text-foreground";
@@ -338,20 +342,17 @@ const SaleProductCard = memo(function SaleProductCard({
   return (
     <button
       type="button"
-      disabled={!inStock}
       onClick={() => onAdd(product)}
       className={cn(
-        "group flex min-h-[112px] flex-col rounded-xl border p-2.5 text-left transition-[border-color,background-color,box-shadow] duration-150 sm:min-h-[120px] sm:p-3 lg:min-h-[128px] lg:p-3 xl:min-h-[132px] xl:p-3.5",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/25 disabled:opacity-100",
-        inStock
-          ? "relative cursor-pointer border-border/80 bg-card hover:border-primary/25 hover:bg-primary/[0.04] hover:shadow-sm active:scale-[0.99]"
-          : "relative cursor-not-allowed border-border/60 bg-muted/20 ring-1 ring-inset ring-border/40",
+        "group flex min-h-[112px] cursor-pointer flex-col rounded-xl border p-2.5 text-left transition-[border-color,background-color,box-shadow] duration-150 sm:min-h-[120px] sm:p-3 lg:min-h-[128px] lg:p-3 xl:min-h-[132px] xl:p-3.5",
+        "relative border-border/80 bg-card hover:border-primary/25 hover:bg-primary/[0.04] hover:shadow-sm active:scale-[0.99]",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/25",
+        stockWarning && "border-destructive/30 bg-destructive/5",
       )}
     >
       <p
         className={cn(
-          "line-clamp-2 flex-1 text-xs font-medium leading-snug sm:text-sm lg:text-sm lg:leading-normal xl:text-base 2xl:text-[17px] 2xl:leading-snug",
-          inStock ? "text-foreground/90" : "text-foreground/80",
+          "line-clamp-2 flex-1 text-xs font-medium leading-snug text-foreground/90 sm:text-sm lg:text-sm lg:leading-normal xl:text-base 2xl:text-[17px] 2xl:leading-snug",
         )}
       >
         {product.name}
@@ -359,8 +360,7 @@ const SaleProductCard = memo(function SaleProductCard({
 
       <div
         className={cn(
-          "mt-3 flex items-center justify-between gap-2 border-t pt-3",
-          inStock ? "border-border/50" : "border-border/40",
+          "mt-3 flex items-center justify-between gap-2 border-t border-border/50 pt-3",
         )}
       >
         <span className={priceClassName}>
@@ -370,12 +370,12 @@ const SaleProductCard = memo(function SaleProductCard({
         <span
           className={cn(
             "shrink-0 rounded-md px-2 py-0.5 text-[10px] font-medium tabular-nums sm:text-xs lg:text-[11px] xl:text-xs 2xl:text-[13px]",
-            !inStock &&
+            stockWarning &&
               "border border-destructive/20 bg-destructive/10 text-destructive/90",
-            inStock &&
+            !stockWarning &&
               lowStock &&
               "bg-amber-500/10 text-amber-800/90 dark:text-amber-200/90",
-            inStock && !lowStock && "bg-muted/60 text-muted-foreground",
+            !stockWarning && !lowStock && "bg-muted/60 text-muted-foreground",
           )}
         >
           {stockLabel}

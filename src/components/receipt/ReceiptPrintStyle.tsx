@@ -18,9 +18,16 @@ export function ReceiptPrintStyle({
 }`
     : `@media print {
   @page { size: ${paperWidthMm}mm auto; margin: 0; }
-  html, body { width: ${paperWidthMm}mm; }
-  /* keep content off the head's unprintable edge */
-  #receipt-print { padding: 2mm; }
+  html, body {
+    width: ${paperWidthMm}mm;
+    margin: 0;
+    padding: 0;
+  }
+  #receipt-print {
+    padding: 2mm;
+    width: ${paperWidthMm}mm;
+    max-width: ${paperWidthMm}mm;
+  }
 }`;
 
   return <style>{css}</style>;

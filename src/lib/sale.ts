@@ -1,7 +1,7 @@
 import type { OrderStatus, PaymentType, PosProduct } from "@/types/api";
 import type { CartLine } from "@/lib/cart";
 
-export type AddToCartResult = "added" | "max_stock" | "unchanged";
+export type AddToCartResult = "added" | "unchanged";
 
 export function tryAddToCart(
   lines: CartLine[],
@@ -9,9 +9,6 @@ export function tryAddToCart(
 ): { lines: CartLine[]; result: AddToCartResult } {
   const existing = lines.find((l) => l.product.productId === product.productId);
   if (existing) {
-    if (existing.quantity >= product.stockQty) {
-      return { lines, result: "max_stock" };
-    }
     return {
       lines: lines.map((l) =>
         l.product.productId === product.productId
@@ -20,9 +17,6 @@ export function tryAddToCart(
       ),
       result: "added",
     };
-  }
-  if (product.stockQty <= 0 || !product.isSellable) {
-    return { lines, result: "max_stock" };
   }
   return {
     lines: [...lines, { product, quantity: 1 }],

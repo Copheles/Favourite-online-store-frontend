@@ -1,13 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   addOrderPayment,
+  exchangeOrder,
   getOrder,
   getOrderReceipt,
   listOrders,
   updateOrderStatus,
   type ListOrdersParams,
 } from "@/apis/order.api";
-import type { AddOrderPaymentInput, OrderStatus } from "@/types/api";
+import type { AddOrderPaymentInput, ExchangeOrderInput, OrderStatus } from "@/types/api";
 import { STALE_TIME } from "@/lib/queryConfig";
 import { queryKeys } from "@/lib/queryKeys";
 import { useAuth } from "@/hooks/useAuth";
@@ -80,6 +81,20 @@ export function useAddOrderPayment() {
       id: string;
       input: AddOrderPaymentInput;
     }) => addOrderPayment(id, input),
+    onSuccess: () => invalidateOrderSideEffects(queryClient),
+  });
+}
+
+export function useExchangeOrder() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      id,
+      input,
+    }: {
+      id: string;
+      input: ExchangeOrderInput;
+    }) => exchangeOrder(id, input),
     onSuccess: () => invalidateOrderSideEffects(queryClient),
   });
 }

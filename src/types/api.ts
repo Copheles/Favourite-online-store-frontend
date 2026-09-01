@@ -179,6 +179,24 @@ export interface AddOrderPaymentInput {
   note?: string | null;
 }
 
+export interface ExchangeOrderItemInput {
+  productId: string;
+  quantity: number;
+  unitPrice: number;
+  discount?: number;
+}
+
+export interface ExchangeOrderInput {
+  items: ExchangeOrderItemInput[];
+  customerId?: string | null;
+  paymentType: PaymentType;
+  paidAmount: number;
+  orderDiscount?: number;
+  deliveryFee?: number;
+  taxAmount?: number;
+  notes?: string | null;
+}
+
 export interface OrderReceipt {
   shopInfo: {
     name: string;

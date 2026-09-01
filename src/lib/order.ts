@@ -36,6 +36,14 @@ export function getOrderTotals(order: {
   };
 }
 
+export function getOrderCustomerId(order: {
+  customerId?: string | null;
+  customer?: { id: string | null } | null;
+}): string {
+  const id = order.customerId ?? order.customer?.id;
+  return id && id.length > 0 ? id : "";
+}
+
 export function getOrderCashierName(
   cashier?: { username: string; displayName?: string | null } | string | null,
 ): string {

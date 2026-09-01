@@ -361,7 +361,32 @@
       "netTotal": "Net Total",
       "payAmount": "Pay Amount",
       "change": "Change",
-      "paymentContacts": "KBZ Pay / Wave Pay"
+      "paymentContacts": "KBZ Pay / Wave Pay",
+      "exchange": {
+        "title": "အော်ဒါ ပြင်ရန်",
+        "button": "ပြင်ရန်",
+        "orderItems": "အော်ဒါ ပစ္စည်းများ",
+        "orderItemsHint": "အရေအတွက်၊ ဈေးနှုန်း ပြင်ပါ၊ ဖယ်ရှားပါ သို့မဟုတ် ပစ္စည်းအသစ် ထည့်ပါ။",
+        "addProduct": "ပစ္စည်းအသစ် ထည့်ရန်...",
+        "emptyItems": "ပစ္စည်းအားလုံး ဖယ်ရှားပြီးပါပြီ။ အောက်တွင် ပစ္စည်းအသစ် ထည့်ပါ။",
+        "originalQty": "မူရင်း {{qty}}",
+        "newBadge": "ပစ္စည်းအသစ်",
+        "settlement": "ငွေရှင်းခြင်း",
+        "returnCredit": "ပြန်အမ်းငွေ ခန့်မှန်းချက်",
+        "newItemsTotal": "အသစ် ပစ္စည်းစုစုပေါင်း",
+        "amountDue": "ပေးရမည့် ငွေ",
+        "submit": "ပြောင်းလဲမှုများ သိမ်းရန်",
+        "successToast": "အော်ဒါ ပြင်ဆင်ပြီးပါပြီ။",
+        "itemsRequired": "အော်ဒါတွင် ပစ္စည်း အနည်းဆုံး တစ်ခု ထည့်ပါ။",
+        "noChanges": "တင်သွင်းမီ ပစ္စည်း အနည်းဆုံး တစ်ခု ပြင်ပါ။",
+        "sourceCustomer": "မူရင်း အော်ဒါ ဖောက်သည်: {{name}}",
+        "invalidReturnQty": "အရေအတွက် သည် အနုတ်မဖြစ်ရပါ။",
+        "customerRequiredForRefund": "ပြန်အမ်းငွေ လိုအပ်ပါက ဖောက်သည် လိုအပ်ပါသည်။",
+        "customerRequiredForCredit": "အကြွေးရောင်းရန် ဖောက်သည် ရွေးပါ။",
+        "invalidPaidAmount": "ပေးချေငွေ သည် သုည သို့မဟုတ် အပေါင်းဖြစ်ရပါမည်။",
+        "paidRequired": "ပေးရမည့် ငွေရှိပါက ပေးချေငွေ ထည့်ပါ။",
+        "refundDue": "ဖောက်သည်ထံ ပြန်အမ်းရမည့် ငွေ (လက်ငင်း): {{amount}}"
+      }
     },
     "stock": {
       "description": "လက်ရှိ inventory balance။",
