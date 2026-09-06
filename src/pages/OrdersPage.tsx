@@ -47,7 +47,7 @@ import {
   useOrders,
   useUpdateOrderStatus,
 } from "@/hooks/useOrders";
-import { formatDate, formatMoney, toMoney } from "@/lib/format";
+import { formatDate, formatMoney, toMoney, todayISO } from "@/lib/format";
 import {
   ORDER_STATUS_FILTERS,
   PAYMENT_FILTERS,
@@ -91,8 +91,8 @@ export function OrdersPage() {
   const isPending = location.pathname.includes("/pending");
   const mode = isPending ? "pending" : isHistory ? "history" : "current";
   const isCurrent = mode === "current";
-  const defaultFrom = "";
-  const defaultTo = "";
+  const defaultFrom = isHistory ? todayISO() : "";
+  const defaultTo = isHistory ? todayISO() : "";
   const [searchParams, setSearchParams] = useSearchParams();
   const { toasts, showToast, dismiss } = usePosToast();
   const updateStatus = useUpdateOrderStatus();
